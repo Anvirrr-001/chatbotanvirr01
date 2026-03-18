@@ -62,5 +62,7 @@ app.listen(PORT, () => {
     console.log(`JivoChat bot server running on port ${PORT}`);
 });
 
-// Start Telegram Bot Integration locally
-require('./telegramBot');
+require('./updateEnv'); // Auto-update .env with IP
+
+// Initialize Telegram testing bot (DISABLED AS PER USER REQUEST)
+// require('./telegramBot');
