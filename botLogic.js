@@ -110,10 +110,10 @@ async function handleMessage(messageText, clientId, chatId) {
             "",
             [
                 "কিভাবে উত্তোলন করবো?",
-                "উত্তোলন করতে পারতেছি না",
+                "উত্তোলনে সমস্যা",
                 "উত্তোলন ফি",
-                "সর্বনিম্ন / সর্বোচ্চ উত্তোলন এর পরিমান",
-                "উত্তোলন করেছি কিন্তু টাকা এখন ও পাই নি",
+                "উত্তোলনের লিমিট",
+                "টাকা পাই নি",
                 "👨‍💻 Contact Operator",
                 "⬅ মেনুতে ফিরে যান"
             ]
@@ -128,9 +128,9 @@ async function handleMessage(messageText, clientId, chatId) {
             "",
             [
                 "কিভাবে ডিপোজিট করবো?",
-                "ডিপোজিট করতে পারতেছি না",
+                "ডিপোজিটে সমস্যা",
                 "ডিপোজিট ফি",
-                "সর্বনিম্ন / সর্বোচ্চ ডিপোজিট এর পরিমান",
+                "ডিপোজিট লিমিট",
                 "ডিপোজিট জমা হয় নি",
                 "👨‍💻 Contact Operator",
                 "⬅ মেনুতে ফিরে যান"
@@ -158,7 +158,7 @@ async function handleMessage(messageText, clientId, chatId) {
         );
     }
 
-    if (textLower.includes('ডিপোজিট করতে পারতেছি না') || textNoSpace.includes('ডিপোজিটকরতেপারতেছিনা') || textLower.includes('cannot deposit') || textLower.includes('cant deposit') || textNoSpace.includes('ডিপজিটকরতেপারছিনা')) {
+    if (textLower.includes('ডিপোজিট করতে পারতেছি না') || textNoSpace.includes('ডিপোজিটকরতেপারতেছিনা') || textLower.includes('cannot deposit') || textLower.includes('cant deposit') || textNoSpace.includes('ডিপজিটকরতেপারছিনা') || textLower.includes('ডিপোজিটে সমস্যা')) {
         userSessions.delete(chatId);
         return createMenuResponse(
             "যদি আপনি ডিপোজিট করতে সমস্যা অনুভব করেন, তাহলে আপনার ইন্টারনেট সংযোগ চেক করুন এবং নিশ্চিত করুন যে আপনি সঠিক পেমেন্ট পদ্ধতি বেছে নিয়েছেন। এরপরও সমস্যা হলে আমাদের লাইভ এজেন্টের সাথে কথা বলতে পারেন।",
@@ -177,7 +177,7 @@ async function handleMessage(messageText, clientId, chatId) {
         );
     }
 
-    if (textLower.includes('সর্বনিম্ন / সর্বোচ্চ ডিপোজিট') || textNoSpace.includes('সর্বনিম্ন/সর্বোচ্চডিপোজিট') || textNoSpace.includes('সর্বনিম্নডিপোজিট') || textNoSpace.includes('সর্বোচ্চডিপোজিট') || textLower.includes('minimum deposit') || textLower.includes('maximum deposit') || textLower.includes('min/max deposit')) {
+    if (textLower.includes('সর্বনিম্ন / সর্বোচ্চ ডিপোজিট') || textNoSpace.includes('সর্বনিম্ন/সর্বোচ্চডিপোজিট') || textNoSpace.includes('সর্বনিম্নডিপোজিট') || textNoSpace.includes('সর্বোচ্চডিপোজিট') || textLower.includes('minimum deposit') || textLower.includes('maximum deposit') || textLower.includes('min/max deposit') || textLower.includes('ডিপোজিট লিমিট')) {
         userSessions.delete(chatId);
         return createBotResponse(
             "ডিপোজিটের সর্বনিম্ন পরিমাণ হলো ২০০ টাকা এবং সর্বোচ্চ পরিমাণ হলো ২৫,০০০ টাকা (পেমেন্ট পদ্ধতির উপর নির্ভর করে ভিন্ন হতে পারে)।"
