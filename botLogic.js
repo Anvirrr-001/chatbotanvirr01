@@ -39,11 +39,41 @@ async function handleMessage(messageText, clientId, chatId) {
         };
     }
 
+    // Handle Global Back / Operator Transitions
+    if (textLower.includes('মেনুতে ফিরে যান')) {
+        userSessions.delete(chatId);
+        return createMenuResponse(
+            "স্বাগতম, কাস্টমার সাপোর্ট আপনাকে শুভেচ্ছ জানাতে পেরে আনন্দিত। 👋",
+            "আপনার প্রশ্নের টপিক সিলেক্ট করুন।",
+            [
+                "🎥 রেফারেল প্রোগ্রাম",
+                "👑 ভিআইপি ক্লাব",
+                "🎁 বোনাসগুলো",
+                "💰 পেমেন্ট",
+                "👤 এখন আপনি সরাসরি টেলিগ্রামে ELONBET",
+                "👨‍💻 Contact Operator"
+            ]
+        );
+    }
+
+    if (textLower.includes('ইতিমধ্যে একটি অনুরোধ জমা দিয়েছি')) {
+        userSessions.delete(chatId);
+        return {
+            "event": "bot_message",
+            "messages": [
+                {
+                    "type": "text",
+                    "text": "অনুগ্রহ করে অপেক্ষা করুন, একজন অপারেটর আপনার সাথে যুক্ত হবেন।"
+                }
+            ]
+        };
+    }
+
     // 2. Welcome Menu (if user says hello, hi, start, or any generic initial greeting)
-    if (textLower === '/start' || textLower.includes('hello') || textLower.includes('hi') || textLower === 'menu' || textLower === 'হ্যালো' || textLower === 'হ্যালো!' || textLower.includes('মেনুতে ফিরে যান')) {
+    if (textLower === '/start' || textLower.includes('hello') || textLower.includes('hi') || textLower === 'menu' || textLower === 'হ্যালো' || textLower === 'হ্যালো!') {
         userSessions.delete(chatId); // reset session
         return createMenuResponse(
-            "হ্যালো, কাস্টমার সাপোর্ট এ যোগাযোগ করার জন্য ধন্যবাদ 👋",
+            "স্বাগতম, কাস্টমার সাপোর্ট আপনাকে শুভেচ্ছ জানাতে পেরে আনন্দিত। 👋",
             "আপনার প্রশ্নের টপিক সিলেক্ট করুন।",
             [
                 "🎥 রেফারেল প্রোগ্রাম",
