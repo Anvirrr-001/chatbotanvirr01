@@ -24,28 +24,36 @@ if (!token) {
                     const buttons = replyData.keyboard.map(k => k.text);
                     const keyboardLayout = [];
                     
+                    const getCbData = (text) => {
+                        let data = text;
+                        if (Buffer.byteLength(data, 'utf8') > 64) {
+                            data = text.substring(0, 18);
+                        }
+                        return data;
+                    };
+
                     // Specific layout matching the screenshot
                     // Row 1: 2 buttons
                     // Row 2: 3 buttons
                     // Row 3: 2 buttons
                     if (buttons.length === 7) {
                         keyboardLayout.push([
-                            { text: buttons[0], callback_data: buttons[0].substring(0, 60) },
-                            { text: buttons[1], callback_data: buttons[1].substring(0, 60) }
+                            { text: buttons[0], callback_data: getCbData(buttons[0]) },
+                            { text: buttons[1], callback_data: getCbData(buttons[1]) }
                         ]);
                         keyboardLayout.push([
-                            { text: buttons[2], callback_data: buttons[2].substring(0, 60) },
-                            { text: buttons[3], callback_data: buttons[3].substring(0, 60) },
-                            { text: buttons[4], callback_data: buttons[4].substring(0, 60) }
+                            { text: buttons[2], callback_data: getCbData(buttons[2]) },
+                            { text: buttons[3], callback_data: getCbData(buttons[3]) },
+                            { text: buttons[4], callback_data: getCbData(buttons[4]) }
                         ]);
                         keyboardLayout.push([
-                            { text: buttons[5], callback_data: buttons[5].substring(0, 60) },
-                            { text: buttons[6], callback_data: buttons[6].substring(0, 60) }
+                            { text: buttons[5], callback_data: getCbData(buttons[5]) },
+                            { text: buttons[6], callback_data: getCbData(buttons[6]) }
                         ]);
                     } else {
                         // Fallback generic layout (2 per row)
                         for(let i=0; i<buttons.length; i+=2) {
-                            const row = buttons.slice(i, i+2).map(btn => ({ text: btn, callback_data: btn.substring(0, 60) }));
+                            const row = buttons.slice(i, i+2).map(btn => ({ text: btn, callback_data: getCbData(btn) }));
                             keyboardLayout.push(row);
                         }
                     }
@@ -95,8 +103,15 @@ if (!token) {
                 if (replyData.keyboard && replyData.keyboard.length > 0) {
                     const buttons = replyData.keyboard.map(k => k.text);
                     const keyboardLayout = [];
+                    const getCbData = (text) => {
+                        let data = text;
+                        if (Buffer.byteLength(data, 'utf8') > 64) {
+                            data = text.substring(0, 18);
+                        }
+                        return data;
+                    };
                     for(let i=0; i<buttons.length; i++) {
-                        keyboardLayout.push([{ text: buttons[i], callback_data: buttons[i].substring(0, 60) }]);
+                        keyboardLayout.push([{ text: buttons[i], callback_data: getCbData(buttons[i]) }]);
                     }
                     extraOptions = {
                         reply_markup: {
