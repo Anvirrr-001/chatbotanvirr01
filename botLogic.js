@@ -20,7 +20,7 @@ if (useOpenAI && process.env.OPENAI_API_KEY) {
  * @returns {object} JivoChat formatted response JSON
  */
 async function handleMessage(messageText, clientId, chatId) {
-    const textLower = messageText.toLowerCase();
+    const textLower = messageText.toLowerCase().trim();
 
     // Check active session for multi-step data collection
     let session = userSessions.get(chatId);
@@ -56,7 +56,7 @@ async function handleMessage(messageText, clientId, chatId) {
         );
     }
 
-    // --- WITHDRAWAL FLOW ---
+    // --- PAYMENT MENU ---
     if (textLower === '💰 পেমেন্ট' || textLower === 'পেমেন্ট') {
         userSessions.delete(chatId);
         return createMenuResponse(
@@ -72,7 +72,7 @@ async function handleMessage(messageText, clientId, chatId) {
         );
     }
 
-    if (textLower === 'উত্তোলন তথ্য') {
+    if (textLower.includes('উত্তোলন তথ্য')) {
         userSessions.delete(chatId);
         return createMenuResponse(
             "উত্তোলন সম্পর্কে আপনার প্রশ্ন উল্লেখ করুন",
@@ -89,8 +89,41 @@ async function handleMessage(messageText, clientId, chatId) {
         );
     }
 
-    if (textLower === 'উত্তোলন করেছি কিন্তু টাকা এখন ও পাই নি' || textLower === 'দীর্ঘ উত্তোলন') {
+    // --- DEPOSIT FLOW START ---
+    if (textLower.includes('ডিপোজিট তথ্য')) {
         userSessions.delete(chatId);
+        return createMenuResponse(
+            "ডিপোজিট সম্পর্কে আপনার প্রশ্ন উল্লেখ করুন",
+            "",
+            [
+                "কিভাবে ডিপোজিট করবো?",
+                "ডিপোজিট করতে পারতেছি না",
+                "ডিপোজিট ফি",
+                "সর্বনিম্ন / সর্বোচ্চ ডিপোজিট এর পরিমান",
+                "ডিপোজিট জমা হয় নি",
+                "👨‍💻 Contact Operator",
+                "⬅ মেনুতে ফিরে যান"
+            ]
+        );
+    }
+
+    if (textLower.includes('ডিপোজিট জমা হয়') || textLower.includes('ডিপোজিট জমা হয়')) {
+        userSessions.set(chatId, { flow: 'SELECT_DEPOSIT_METHOD' });
+        return createMenuResponse(
+            "অনুগ্রহ করে আপনি যে পেমেন্ট পদ্ধতিটি ব্যবহার করেছেন তা নির্বাচন করুন। এটি আমাদেরকে আপনার আমানত দ্রুত অনুসন্ধান করতে সাহায্য করে 👇",
+            "",
+            [
+                "Bkash FAST",
+                "Nagad FAST",
+                "Rocket"
+            ]
+        );
+    }
+    // --- DEPOSIT FLOW END ---
+    
+    // --- WITHDRAWAL FLOW START ---
+    if (textLower.includes('উত্তোলন করেছি কিন্তু টাকা') || textLower.includes('দীর্ঘ উত্তোলন')) {
+        userSessions.set(chatId, { flow: 'SELECT_WITHDRAWAL_METHOD' });
         return createMenuResponse(
             "দয়া করে আপনি যে পেমেন্ট পদ্ধতিটি ব্যবহার করেছেন তা নির্বাচন করুন। এটি আমাদেরকে আপনার উত্তোলনটি দ্রুত অনুসরণ করতে সাহায্য করে 👇",
             "",
@@ -101,16 +134,33 @@ async function handleMessage(messageText, clientId, chatId) {
             ]
         );
     }
+    // --- WITHDRAWAL FLOW END ---
 
-    if (textLower === 'bkash fast' || textLower === 'nagad fast' || textLower === 'bkash nagad rocket upay') {
-        userSessions.set(chatId, { flow: 'WITHDRAWAL', method: messageText });
+    // Handle Method Selection for either Deposit or Withdrawal
+    if (session && session.flow === 'SELECT_DEPOSIT_METHOD' && (textLower.includes('fast') || textLower.includes('rocket'))) {
+        session.flow = 'DEPOSIT';
+        session.method = messageText;
+        return createMenuResponse(
+            "দারুন পছন্দ! এখন, আপনার আমানত সম্পর্কে আমাদের আরও কিছু তথ্যের প্রয়োজন হবে। আপনাকে লিখতে হবে:\n\n1. পরিমাণ\n2. ইউজার আইডি\n3. ট্রানজেকশন আইডি\n4. ওয়ালেট নম্বর\n5. জমা দেওয়ার তারিখ-সময়\n\nএর পরে, আপনার ডায়ালগটি অপারেটরের কাছে স্থানান্তরিত হবে এবং তিনি নিশ্চিত করবেন যে আপনার আবেদনটি গৃহীত হয়েছে।\n\nএগিয়ে যাওয়ার জন্য প্রস্তুত?",
+            "",
+            [
+                "হ্যাঁ, আমি প্রস্তুত",
+                "আমি ইতিমধ্যে একটি অনুরোধ জমা দিয়েছি",
+                "মেনুতে ফিরে যান"
+            ]
+        );
+    }
+
+    if (session && session.flow === 'SELECT_WITHDRAWAL_METHOD' && (textLower.includes('fast') || textLower.includes('upay'))) {
+        session.flow = 'WITHDRAWAL';
+        session.method = messageText;
         return createMenuResponse(
             "দারুন পছন্দ! এখন, আপনার আমানত সম্পর্কে আমাদের আরও কিছু তথ্যের প্রয়োজন হবে। আপনাকে লিখতে হবে:\n\n1. পরিমাণ\n2. ইউজার আইডি\n3. ওয়ালেট নম্বর\n4. উত্তোলন এর তারিখ-সময়\n\nএর পরে, আপনার ডায়ালগটি অপারেটরের কাছে স্থানান্তরিত হবে এবং তিনি নিশ্চিত করবেন যে আপনার আবেদনটি গৃহীত হয়েছে।\n\nএগিয়ে যাওয়ার জন্য প্রস্তুত?",
             "",
             [
                 "হ্যাঁ, আমি প্রস্তুত",
                 "আমি ইতিমধ্যে একটি অনুরোধ জমা দিয়েছি",
-                "⬅ মেনুতে ফিরে যান"
+                "মেনুতে ফিরে যান"
             ]
         );
     }
@@ -145,6 +195,71 @@ async function handleMessage(messageText, clientId, chatId) {
             session.step = 'REVIEW';
             return createMenuResponse(
                 `আসুন আপনি যে তথ্যগুলো দিয়েছেন তা পর্যালোচনা করি:\n\nইউজার আইডি: ${session.userId}\nপরিমান: ${session.amount}\nওয়ালেট নম্বর: ${session.wallet}\nউত্তোলনের তারিখ-সময়: ${session.date}\n\nসব কিছু ঠিক আছে?`,
+                "",
+                [
+                    "হ্যাঁ, সব ঠিক আছে",
+                    "না, কিছু একটা ভুল"
+                ]
+            );
+        }
+
+        if (session.step === 'REVIEW') {
+            if (textLower === 'হ্যাঁ, সব ঠিক আছে') {
+                userSessions.delete(chatId);
+                // End of flow -> transfer to agent
+                return {
+                    "event": "bot_message",
+                    "messages": [
+                        {
+                            "type": "text",
+                            "text": "দারুণ! আপনাকে আরও সহায়তার জন্য একজন অপারেটরের সাথে যুক্ত করা হচ্ছে।💰"
+                        }
+                    ]
+                };
+            }
+            if (textLower === 'না, কিছু একটা ভুল') {
+                userSessions.delete(chatId);
+                return createBotResponse("অনুগ্রহ করে পুনরায় শুরু করুন। 'পেমেন্ট' বাটনে ক্লিক করে আবার তথ্য জমা দিন।");
+            }
+        }
+    }
+
+    // Handle Active Sequence inside Deposit Flow
+    if (session && session.flow === 'DEPOSIT') {
+        if (textLower === 'হ্যাঁ, আমি প্রস্তুত') {
+            session.step = 'ASK_AMOUNT';
+            return createBotResponse("আপনার ডিপোজিটের পরিমাণ কত? 💰");
+        }
+        
+        if (session.step === 'ASK_AMOUNT') {
+            session.amount = messageText;
+            session.step = 'ASK_USER_ID';
+            return createBotResponse("আপনার ইউজার আইডি কত? 👤");
+        }
+
+        if (session.step === 'ASK_USER_ID') {
+            session.userId = messageText;
+            session.step = 'ASK_TXN_ID';
+            return createBotResponse("আপনার ট্রানজেকশন আইডি প্রদান করুন। 📝");
+        }
+
+        if (session.step === 'ASK_TXN_ID') {
+            session.txnId = messageText;
+            session.step = 'ASK_WALLET';
+            return createBotResponse("ডিপোজিটের জন্য ব্যবহৃত ওয়ালেট নম্বরটি শেয়ার করতে পারবেন? 🏦");
+        }
+
+        if (session.step === 'ASK_WALLET') {
+            session.wallet = messageText;
+            session.step = 'ASK_DATE';
+            return createBotResponse("আপনি এই ডিপোজিটটি কখন করেছেন? তারিখ এবং সময় অনুগ্রহ করে 📅⏰");
+        }
+
+        if (session.step === 'ASK_DATE') {
+            session.date = messageText;
+            session.step = 'REVIEW';
+            return createMenuResponse(
+                `আসুন আপনি যে তথ্যগুলো দিয়েছেন তা পর্যালোচনা করি:\n\nইউজার আইডি: ${session.userId}\nপরিমান: ${session.amount}\nট্রানজেকশন আইডি: ${session.txnId}\nওয়ালেট নম্বর: ${session.wallet}\nজমা দেওয়ার তারিখ-সময়: ${session.date}\n\nসব কিছু ঠিক আছে?`,
                 "",
                 [
                     "হ্যাঁ, সব ঠিক আছে",
