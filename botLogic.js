@@ -119,6 +119,39 @@ async function handleMessage(messageText, clientId, chatId) {
             ]
         );
     }
+
+    if (textLower.includes('কিভাবে ডিপোজিট')) {
+        userSessions.delete(chatId);
+        return createBotResponse(
+            "আপনার অ্যাকাউন্টে টাকা জমা করতে, আমাদের ওয়েবসাইটে লগইন করুন এবং 'Deposit' বিকল্পে ক্লিক করুন। এরপর আপনার পছন্দের পেমেন্ট পদ্ধতি (Bkash, Nagad ইত্যাদি) নির্বাচন করে স্ক্রিনে দেওয়া নির্দেশিকা অনুসরণ করুন।"
+        );
+    }
+
+    if (textLower.includes('ডিপোজিট করতে পারতেছি না')) {
+        userSessions.delete(chatId);
+        return createMenuResponse(
+            "যদি আপনি ডিপোজিট করতে সমস্যা অনুভব করেন, তাহলে আপনার ইন্টারনেট সংযোগ চেক করুন এবং নিশ্চিত করুন যে আপনি সঠিক পেমেন্ট পদ্ধতি বেছে নিয়েছেন। এরপরও সমস্যা হলে আমাদের লাইভ এজেন্টের সাথে কথা বলতে পারেন।",
+            "",
+            [
+                "👨‍💻 Contact Operator",
+                "⬅ মেনুতে ফিরে যান"
+            ]
+        );
+    }
+
+    if (textLower.includes('ডিপোজিট ফি')) {
+        userSessions.delete(chatId);
+        return createBotResponse(
+            "আমাদের প্ল্যাটফর্মে ডিপোজিট করার জন্য কোনো অতিরিক্ত ফি বা চার্জ নেওয়া হয় না। আপনি যে পরিমাণ টাকা সেন্ড করবেন, ঠিক সেই পরিমাণই আপনার অ্যাকাউন্টে যোগ হবে।"
+        );
+    }
+
+    if (textLower.includes('সর্বনিম্ন / সর্বোচ্চ ডিপোজিট')) {
+        userSessions.delete(chatId);
+        return createBotResponse(
+            "ডিপোজিটের সর্বনিম্ন পরিমাণ হলো ২০০ টাকা এবং সর্বোচ্চ পরিমাণ হলো ২৫,০০০ টাকা (পেমেন্ট পদ্ধতির উপর নির্ভর করে ভিন্ন হতে পারে)।"
+        );
+    }
     // --- DEPOSIT FLOW END ---
     
     // --- WITHDRAWAL FLOW START ---
