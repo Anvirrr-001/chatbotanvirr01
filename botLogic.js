@@ -46,7 +46,6 @@ async function handleMessage(messageText, clientId, chatId) {
             "হ্যালো, কাস্টমার সাপোর্ট এ যোগাযোগ করার জন্য ধন্যবাদ 👋",
             "আপনার প্রশ্নের টপিক সিলেক্ট করুন।",
             [
-                "বিকল্প জমা পদ্ধতি (bKash P2P) ব্যবহারের",
                 "🎥 রেফারেল প্রোগ্রাম",
                 "👑 ভিআইপি ক্লাব",
                 "🎁 বোনাসগুলো",
@@ -90,7 +89,7 @@ async function handleMessage(messageText, clientId, chatId) {
         );
     }
 
-    if (textLower === 'উত্তোলন করেছি কিন্তু টাকা এখন ও পাই নি') {
+    if (textLower === 'উত্তোলন করেছি কিন্তু টাকা এখন ও পাই নি' || textLower === 'দীর্ঘ উত্তোলন') {
         userSessions.delete(chatId);
         return createMenuResponse(
             "দয়া করে আপনি যে পেমেন্ট পদ্ধতিটি ব্যবহার করেছেন তা নির্বাচন করুন। এটি আমাদেরকে আপনার উত্তোলনটি দ্রুত অনুসরণ করতে সাহায্য করে 👇",

@@ -33,22 +33,29 @@ if (!token) {
                     };
 
                     // Specific layout matching the screenshot
-                    // Row 1: 2 buttons
-                    // Row 2: 3 buttons
-                    // Row 3: 2 buttons
-                    if (buttons.length === 7) {
+                    // Row 1: 4 buttons
+                    // Row 2: 2 buttons
+                    if (buttons.length === 6 && buttons[0].includes('রেফারেল প্রোগ্রাম')) {
                         keyboardLayout.push([
                             { text: buttons[0], callback_data: getCbData(buttons[0]) },
-                            { text: buttons[1], callback_data: getCbData(buttons[1]) }
-                        ]);
-                        keyboardLayout.push([
+                            { text: buttons[1], callback_data: getCbData(buttons[1]) },
                             { text: buttons[2], callback_data: getCbData(buttons[2]) },
-                            { text: buttons[3], callback_data: getCbData(buttons[3]) },
-                            { text: buttons[4], callback_data: getCbData(buttons[4]) }
+                            { text: buttons[3], callback_data: getCbData(buttons[3]) }
                         ]);
                         keyboardLayout.push([
-                            { text: buttons[5], callback_data: getCbData(buttons[5]) },
-                            { text: buttons[6], callback_data: getCbData(buttons[6]) }
+                            { text: buttons[4], callback_data: getCbData(buttons[4]) },
+                            { text: buttons[5], callback_data: getCbData(buttons[5]) }
+                        ]);
+                    } else if (buttons.length === 5 && buttons[0] === 'ডিপোজিট জমা হয় নি') {
+                        // Payment menu layout from screenshot
+                        keyboardLayout.push([
+                            { text: buttons[0], callback_data: getCbData(buttons[0]) },
+                            { text: buttons[1], callback_data: getCbData(buttons[1]) },
+                            { text: buttons[2], callback_data: getCbData(buttons[2]) },
+                            { text: buttons[3], callback_data: getCbData(buttons[3]) }
+                        ]);
+                        keyboardLayout.push([
+                            { text: buttons[4], callback_data: getCbData(buttons[4]) }
                         ]);
                     } else {
                         // Fallback generic layout (2 per row)
@@ -110,8 +117,37 @@ if (!token) {
                         }
                         return data;
                     };
-                    for(let i=0; i<buttons.length; i++) {
-                        keyboardLayout.push([{ text: buttons[i], callback_data: getCbData(buttons[i]) }]);
+                    // Specific layout matching the screenshot
+                    // Row 1: 4 buttons
+                    // Row 2: 2 buttons
+                    if (buttons.length === 6 && buttons[0].includes('রেফারেল প্রোগ্রাম')) {
+                        keyboardLayout.push([
+                            { text: buttons[0], callback_data: getCbData(buttons[0]) },
+                            { text: buttons[1], callback_data: getCbData(buttons[1]) },
+                            { text: buttons[2], callback_data: getCbData(buttons[2]) },
+                            { text: buttons[3], callback_data: getCbData(buttons[3]) }
+                        ]);
+                        keyboardLayout.push([
+                            { text: buttons[4], callback_data: getCbData(buttons[4]) },
+                            { text: buttons[5], callback_data: getCbData(buttons[5]) }
+                        ]);
+                    } else if (buttons.length === 5 && buttons[0] === 'ডিপোজিট জমা হয় নি') {
+                        // Payment menu layout from screenshot
+                        keyboardLayout.push([
+                            { text: buttons[0], callback_data: getCbData(buttons[0]) },
+                            { text: buttons[1], callback_data: getCbData(buttons[1]) },
+                            { text: buttons[2], callback_data: getCbData(buttons[2]) },
+                            { text: buttons[3], callback_data: getCbData(buttons[3]) }
+                        ]);
+                        keyboardLayout.push([
+                            { text: buttons[4], callback_data: getCbData(buttons[4]) }
+                        ]);
+                    } else {
+                        // Fallback generic layout (2 per row)
+                        for(let i=0; i<buttons.length; i+=2) {
+                            const row = buttons.slice(i, i+2).map(btn => ({ text: btn, callback_data: getCbData(btn) }));
+                            keyboardLayout.push(row);
+                        }
                     }
                     extraOptions = {
                         reply_markup: {
