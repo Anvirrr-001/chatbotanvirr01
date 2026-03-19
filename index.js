@@ -1,5 +1,7 @@
 require('dotenv').config();
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const cors = require('cors');
 const { handleMessage } = require('./botLogic');
 
@@ -42,6 +44,36 @@ app.post('/jivo-webhook', async (req, res) => {
 app.use(express.static('public'));
 
 // API Endpoint for Web Chat Interface
+app.get('/api/config', (req, res) => {
+    try {
+        const configPath = path.join(__dirname, 'config.json');
+        const configData = fs.readFileSync(configPath, 'utf8');
+        res.status(200).json(JSON.parse(configData));
+    } catch (error) {
+        console.error('Error reading config:', error);
+        res.status(500).json({ error: 'Failed to read configuration' });
+    }
+});
+
+app.post('/api/config', (req, res) => {
+    const { password, config } = req.body;
+    
+    // Simple authentication for the admin panel
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+    
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Unauthorized. Invalid password.' });
+    }
+
+    try {
+        const configPath = path.join(__dirname, 'config.json');
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
+        res.status(200).json({ success: true, message: 'Configuration saved correctly' });
+    } catch (error) {
+        console.error('Error saving config:', error);
+        res.status(500).json({ error: 'Failed to save configuration' });
+    }
+});
 app.post('/api/chat', async (req, res) => {
     try {
         const userMessage = req.body.message || '';

@@ -2,8 +2,24 @@ const chatMessages = document.getElementById('chatMessages');
 const chatForm = document.getElementById('chatForm');
 const messageInput = document.getElementById('messageInput');
 
-// On load, send a "hello" to trigger the welcome menu
-document.addEventListener('DOMContentLoaded', () => {
+// On load, send a "hello" to trigger the welcome menu and load config
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const res = await fetch('/api/config');
+        if (res.ok) {
+            const config = await res.json();
+            if (config.botName) {
+                const nameEl = document.querySelector('.bot-name-text');
+                if (nameEl) nameEl.textContent = config.botName;
+                else {
+                    // Fallback if the element name is slightly different
+                    const topName = document.querySelector('header h1') || document.querySelector('.bot-name');
+                    if (topName) topName.textContent = config.botName;
+                }
+            }
+        }
+    } catch (e) { console.error("Could not load bot config"); }
+    
     sendMessageToServer('hello', false); // false means don't show "hello" as user message visually
 });
 

@@ -1,0 +1,28 @@
+{
+  "botName": "ELON সাহায্যকারী",
+  "botAvatar": "https://i.ibb.co/example",
+  "welcomeGreeting": "স্বাগতম, কাস্টমার সাপোর্ট আপনাকে শুভেচ্ছ জানাতে পেরে আনন্দিত। 👋",
+  "welcomeMenuText": "আপনার প্রশ্নের টপিক সিলেক্ট করুন।",
+  "welcomeMenu": [
+    "🎥 রেফারেল প্রোগ্রাম",
+    "👑 ভিআইপি ক্লাব",
+    "🎁 বোনাসগুলো",
+    "💰 পেমেন্ট",
+    "👤 এখন আপনি সরাসরি টেলিগ্রামে ELONBET",
+    "👨‍💻 Contact Operator"
+  ],
+  "keywords": [
+    {
+      "trigger": "Contact Operator",
+      "exactMatch": false,
+      "responseType": "operator",
+      "text": "অনুগ্রহ করে অপেক্ষা করুন, একজন অপারেটর আপনার সাথে যুক্ত হবেন।"
+    },
+    {
+      "trigger": "ইতিমধ্যে একটি অনুরোধ জমা দিয়েছি",
+      "exactMatch": false,
+      "responseType": "operator",
+      "text": "অনুগ্রহ করে অপেক্ষা করুন, একজন অপারেটর আপনার সাথে যুক্ত হবেন।"
+    }
+  ]
+}
