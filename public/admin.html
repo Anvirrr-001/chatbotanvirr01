@@ -8,176 +8,411 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Hind Siliguri', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        body { font-family: 'Hind Siliguri', sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 0; }
         .custom-scrollbar::-webkit-scrollbar { width: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #1a1a1a; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #444; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); }
-        .input-field { width: 100%; background-color: #111827; border: 1px solid #1f2937; border-radius: 0.5rem; padding: 0.75rem 1rem; color: #fff; transition: all 0.2s; }
-        .input-field:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
-        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; transition: all 0.3s; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
-        .card { background-color: #111827; border: 1px solid #1f2937; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        .modal-backdrop { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 50; display: flex; align-items: center; justify-content: center; visibility: hidden; opacity: 0; transition: all 0.3s; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .input-field { width: 100%; background-color: #111827; border: 1px solid #1f2937; border-radius: 0.5rem; padding: 0.75rem 1rem; color: #fff; transition: all 0.2s; box-sizing: border-box; }
+        .input-field:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3); }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.3s; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .card { background-color: #111827; border: 1px solid #1f2937; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
+        .modal-backdrop { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.8); backdrop-filter: blur(4px); z-index: 50; display: flex; align-items: center; justify-content: center; visibility: hidden; opacity: 0; transition: all 0.3s; }
         .modal-backdrop.show { visibility: visible; opacity: 1; }
-        .modal-backdrop.show .card { transform: scale(1); opacity: 1; }
-        .toast { position: fixed; bottom: 2rem; right: 2rem; background-color: #059669; color: #fff; padding: 0.75rem 1.5rem; border-radius: 9999px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); z-index: 100; transform: translateY(5rem); transition: all 0.3s; opacity: 0; pointer-events: none; }
+        .toast { position: fixed; bottom: 2rem; right: 2rem; background-color: #059669; color: #fff; padding: 0.75rem 1.5rem; border-radius: 9999px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 100; transform: translateY(5rem); transition: all 0.3s; opacity: 0; pointer-events: none; }
         .toast.show { transform: translateY(0); opacity: 1; }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-4 md:p-8 min-h-screen">
 
+    <!-- Login Section -->
     <div id="login-screen" class="max-w-md mx-auto mt-20 p-8 glass rounded-2xl shadow-2xl">
-        <h1 class="text-3xl font-bold mb-6 text-center text-blue-400">Admin Login</h1>
-        <div class="mb-4">
-            <label class="block mb-2 text-sm font-medium">Password</label>
-            <input type="password" id="admin-pass" class="input-field" placeholder="Enter admin password">
+        <h1 class="text-3xl font-bold mb-2 text-center text-blue-400">Admin Login</h1>
+        <div id="connection-status" class="text-center text-[10px] text-gray-500 mb-6 flex items-center justify-center gap-2">
+            <span id="status-dot" class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span> 
+            <span id="status-text">Checking server...</span>
         </div>
-        <button onclick="login()" class="w-full btn-primary mt-4">Login to Dashboard</button>
-        <p id="login-error" class="text-red-500 mt-4 text-sm hidden">Incorrect password. Please try again.</p>
+        
+        <form onsubmit="submitAdminLogin(event)">
+            <div class="mb-4">
+                <label class="block mb-2 text-xs font-bold uppercase text-gray-400 tracking-wider">Password</label>
+                <input type="password" id="admin-pass" class="input-field" placeholder="Enter admin password" required autocomplete="current-password">
+            </div>
+            <button type="submit" id="login-btn" class="w-full btn-primary mt-4 flex items-center justify-center gap-2">
+                <span id="btn-text">Login to Dashboard</span>
+                <i id="btn-spinner" class="fas fa-circle-notch fa-spin hidden"></i>
+            </button>
+        </form>
+        <p id="login-error" class="text-red-400 mt-4 text-sm text-center font-medium hidden"></p>
     </div>
 
+    <!-- Dashboard Section (Hidden by default) -->
     <div id="dashboard" class="max-w-6xl mx-auto hidden">
-        <!-- Header -->
         <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
             <div>
-                <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-                    Bot Master Dashboard
-                </h1>
-                <p class="text-gray-400 mt-1">Manage your JivoChat bot responses and settings</p>
+                <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Bot Master</h1>
+                <p class="text-gray-400 mt-1">Advanced Flow Builder & Settings</p>
             </div>
             <div class="flex gap-4">
-                <button onclick="saveConfig()" class="btn-primary">
-                    <i class="fas fa-save mr-2"></i> Save Changes
+                <button onclick="saveConfig()" class="btn-primary flex items-center gap-2">
+                    <i class="fas fa-save"></i> Save Changes
                 </button>
-                <button onclick="logout()" class="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-bold transition-all">
+                <button onclick="location.reload()" class="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg font-bold transition-all border border-gray-700">
                     Logout
                 </button>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <!-- Sidebar: Menu List -->
-            <div class="lg:col-span-1 space-y-4">
-                <div class="card h-full">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-bold">Menus / Steps</h2>
-                        <button onclick="createNewMenu()" class="text-blue-400 hover:text-blue-300"><i class="fas fa-plus-circle text-xl"></i></button>
+            <div class="lg:col-span-1">
+                <div class="card h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-bold">Flow Steps</h2>
+                        <button onclick="createNewMenu()" class="text-blue-400 hover:text-blue-300 transition-colors">
+                            <i class="fas fa-plus-circle text-2xl"></i>
+                        </button>
                     </div>
-                    <div id="menu-list-sidebar" class="space-y-2 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
-                        <!-- List of Menu IDs will appear here -->
-                    </div>
+                    <div id="menu-list-sidebar" class="space-y-2 overflow-y-auto pr-2 custom-scrollbar flex-1 max-h-[600px]"></div>
                 </div>
             </div>
 
-            <!-- Main: Menu Editor -->
             <div class="lg:col-span-3 space-y-6">
-                <!-- Global Settings (Bot Name etc.) -->
                 <div class="card">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="block text-xs uppercase text-gray-400 mb-1">Bot Name</label>
-                            <input type="text" id="bot-name" class="input-field" placeholder="Bot Name">
+                            <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2">Bot Name</label>
+                            <input type="text" id="bot-name" class="input-field" placeholder="Chatbot Name">
                         </div>
                         <div>
-                            <label class="block text-xs uppercase text-gray-400 mb-1">Welcome Greeting</label>
-                            <input type="text" id="welcome-greeting" class="input-field" placeholder="Hello!">
+                            <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2">Welcome Greeting</label>
+                            <input type="text" id="welcome-greeting" class="input-field" placeholder="Welcome message...">
                         </div>
                     </div>
                 </div>
 
-                <!-- Active Menu Editor -->
                 <div id="menu-editor" class="card hidden border-t-4 border-blue-500">
-                    <div class="flex justify-between items-center mb-6">
+                    <div class="flex justify-between items-center mb-8">
                         <h2 class="text-xl font-bold flex items-center">
                             <i class="fas fa-edit mr-3 text-blue-400"></i> Editing: <span id="editing-menu-id" class="ml-2 text-blue-300"></span>
                         </h2>
-                        <button onclick="deleteActiveMenu()" id="delete-menu-btn" class="text-red-500 hover:text-red-400 text-sm">
-                            <i class="fas fa-trash mr-1"></i> Delete Menu
+                        <button onclick="deleteActiveMenu()" class="text-red-500 hover:text-red-400 text-xs font-bold uppercase tracking-widest border border-red-900 px-3 py-1 rounded hover:bg-red-950 transition-all">
+                            <i class="fas fa-trash mr-1"></i> Delete
                         </button>
                     </div>
 
-                    <div class="space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-xs font-bold text-gray-400 mb-1">Menu Type</label>
+                                <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2">Menu Type</label>
                                 <select id="menu-type" class="input-field" onchange="toggleMenuTypeUI()">
-                                    <option value="standard">Standard (Text + Buttons)</option>
+                                    <option value="standard">Standard (Buttons)</option>
                                     <option value="operator">Operator Transfer</option>
                                 </select>
                             </div>
-                            <div id="initial-menu-toggle-container">
-                                <label class="block text-xs font-bold text-gray-400 mb-1">Entry Point?</label>
-                                <div class="flex items-center mt-2">
-                                    <input type="checkbox" id="is-initial-menu" class="w-5 h-5 rounded cursor-pointer">
-                                    <span class="ml-2 text-sm text-gray-300">Set as starting menu</span>
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2">Entry Point</label>
+                                <div class="flex items-center mt-3">
+                                    <input type="checkbox" id="is-initial-menu" class="w-5 h-5 rounded bg-gray-900 border-gray-700 cursor-pointer">
+                                    <span class="ml-3 text-sm text-gray-400">Set as starting menu</span>
                                 </div>
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-gray-400 mb-1">Message Text (বট যা বলবে)</label>
-                            <textarea id="menu-text-content" rows="4" class="input-field" placeholder="Enter message..."></textarea>
+                            <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2">Bot Message Text</label>
+                            <textarea id="menu-text-content" rows="4" class="input-field" placeholder="What should the bot say?"></textarea>
                         </div>
 
                         <div id="options-section">
                             <div class="flex justify-between items-center mb-4">
-                                <label class="block text-xs font-bold text-gray-400">Buttons / Options</label>
-                                <button onclick="addOptionRow()" class="text-xs bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded">
+                                <label class="block text-[10px] font-bold uppercase text-gray-500">Interactive Buttons</label>
+                                <button onclick="addOptionRow()" class="text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 px-3 py-1.5 rounded-lg border border-blue-900 transition-all">
                                     <i class="fas fa-plus mr-1"></i> Add Button
                                 </button>
                             </div>
-                            <div id="options-list" class="space-y-3">
-                                <!-- Option rows -->
-                            </div>
+                            <div id="options-list" class="space-y-3"></div>
                         </div>
                     </div>
                 </div>
 
-                <div id="no-menu-selected" class="card text-center py-20 bg-opacity-50">
-                    <i class="fas fa-mouse-pointer text-5xl text-gray-600 mb-4"></i>
-                    <p class="text-gray-400">Please select a menu from the sidebar to edit or create a new one.</p>
+                <div id="no-menu-selected" class="card text-center py-24 bg-gray-900/40 border-dashed border-gray-800">
+                    <i class="fas fa-mouse-pointer text-6xl text-gray-700 mb-6 block"></i>
+                    <p class="text-gray-500 text-lg">Select a step from the sidebar to start editing</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Option Row Template -->
+    <!-- Templates & Overlays -->
     <template id="option-row-template">
-        <div class="flex flex-col md:flex-row gap-3 p-4 glass rounded-lg relative group">
+        <div class="flex flex-col md:flex-row gap-4 p-5 glass rounded-xl relative group hover:bg-white/[0.05] transition-all">
             <div class="flex-1">
-                <label class="block text-[10px] text-gray-500 uppercase">Button Label</label>
-                <input type="text" class="opt-text input-field py-2 text-sm" placeholder="e.g. Deposit">
+                <label class="block text-[10px] text-gray-500 uppercase mb-1">Button Label</label>
+                <input type="text" class="opt-text input-field py-2 text-sm" placeholder="e.g. Help">
             </div>
             <div class="flex-1">
-                <label class="block text-[10px] text-gray-500 uppercase">Target Menu</label>
-                <select class="opt-target input-field py-2 text-sm">
-                    <!-- Dynamic menu list -->
-                </select>
+                <label class="block text-[10px] text-gray-500 uppercase mb-1">Target Action/Step</label>
+                <select class="opt-target input-field py-2 text-sm"></select>
             </div>
             <div class="flex items-end">
-                <button class="remove-option-btn text-gray-600 hover:text-red-500 mb-2">
-                    <i class="fas fa-trash"></i>
+                <button class="remove-option-btn text-gray-600 hover:text-red-500 p-2 transition-colors">
+                    <i class="fas fa-times-circle text-xl"></i>
                 </button>
             </div>
         </div>
     </template>
 
-    <!-- Modal: New Menu -->
     <div id="new-menu-modal" class="modal-backdrop">
-        <div class="card w-full max-w-md mx-4 transform transition-all scale-95 opacity-0 duration-300" id="modal-content">
-            <h3 class="text-xl font-bold mb-4">Create New Menu/Step</h3>
-            <p class="text-gray-400 text-sm mb-6">Enter a unique ID for the new menu. This will be used to link buttons to this step.</p>
-            <input type="text" id="new-menu-id-input" class="input-field mb-6" placeholder="e.g. withdrawal_steps">
+        <div class="card w-full max-w-sm mx-4 transform transition-all shadow-2xl">
+            <h3 class="text-xl font-bold mb-2">New Step ID</h3>
+            <p class="text-gray-500 text-xs mb-6">Enter a unique identifier (no spaces)</p>
+            <input type="text" id="new-menu-id-input" class="input-field mb-6" placeholder="e.g. help_section">
             <div class="flex justify-end gap-3">
-                <button onclick="closeModal()" class="px-5 py-2 text-gray-400 hover:text-white transition-colors">Cancel</button>
-                <button onclick="confirmCreateMenu()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold transition-all">Create Menu</button>
+                <button onclick="closeModal()" class="px-4 py-2 text-gray-500 hover:text-white transition-colors">Cancel</button>
+                <button onclick="confirmCreateMenu()" class="btn-primary">Create</button>
             </div>
         </div>
     </div>
 
-    <!-- Toast Notification -->
     <div id="toast" class="toast">
-        <i class="fas fa-check-circle mr-2"></i> <span id="toast-message">Changes saved!</span>
+        <i class="fas fa-check-circle mr-2 text-green-300"></i> <span id="toast-message"></span>
     </div>
+
+    <script>
+        let currentConfig = { menus: [], initialMenuId: "main_menu", botName: "", welcomeGreeting: "" };
+        let adminPassword = '';
+        let activeMenuId = null;
+
+        // Trace function to log both to console and optionally to a hidden UI element for debug
+        function dbg(msg) { console.log(`[DEBUG] ${msg}`); }
+
+        async function submitAdminLogin(event) {
+            if (event) event.preventDefault();
+            dbg("submitAdminLogin initiated");
+            
+            const btn = document.getElementById('login-btn');
+            const btnText = document.getElementById('btn-text');
+            const spinner = document.getElementById('btn-spinner');
+            const errorMsg = document.getElementById('login-error');
+            const passInput = document.getElementById('admin-pass');
+            
+            const pass = passInput.value.trim();
+            if (!pass) return;
+
+            // UI State: Loading
+            btn.disabled = true;
+            btnText.textContent = "Verifying...";
+            spinner.classList.remove('hidden');
+            errorMsg.classList.add('hidden');
+
+            try {
+                dbg(`Attempting POST /api/admin-login...`);
+                const response = await fetch('/api/admin-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: pass })
+                });
+
+                dbg(`Response status: ${response.status}`);
+
+                if (response.ok) {
+                    dbg("Login successful, loading config...");
+                    const configRes = await fetch('/api/config');
+                    if (configRes.ok) {
+                        currentConfig = await configRes.json();
+                        adminPassword = pass;
+                        
+                        document.getElementById('login-screen').classList.add('hidden');
+                        document.getElementById('dashboard').classList.remove('hidden');
+                        renderDashboard();
+                        dbg("Dashboard ready.");
+                    } else {
+                        throw new Error("Failed to load config after login");
+                    }
+                } else {
+                    const data = await response.json();
+                    dbg(`Login failed: ${data.error}`);
+                    errorMsg.textContent = data.error || "Login unsuccessful";
+                    errorMsg.classList.remove('hidden');
+                }
+            } catch (err) {
+                dbg(`Network/Server error: ${err.message}`);
+                errorMsg.textContent = "Cannot reach server. Is it running?";
+                errorMsg.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = "Login to Dashboard";
+                spinner.classList.add('hidden');
+            }
+        }
+
+        function renderDashboard() {
+            document.getElementById('bot-name').value = currentConfig.botName || "";
+            document.getElementById('welcome-greeting').value = currentConfig.welcomeGreeting || "";
+            renderSidebar();
+            if (currentConfig.menus.length > 0 && !activeMenuId) {
+                // By default select the initial menu if exists
+                openMenu(currentConfig.initialMenuId || currentConfig.menus[0].id);
+            }
+        }
+
+        function renderSidebar() {
+            const list = document.getElementById('menu-list-sidebar');
+            list.innerHTML = '';
+            currentConfig.menus.forEach(m => {
+                const isInitial = m.id === currentConfig.initialMenuId;
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left p-4 rounded-xl text-sm transition-all flex justify-between items-center group ${activeMenuId === m.id ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'}`;
+                btn.onclick = () => openMenu(m.id);
+                btn.innerHTML = `<span class="truncate font-medium">${m.id}</span> ${isInitial ? '<span class="text-[8px] font-bold bg-blue-500/30 text-blue-200 px-2 py-1 rounded tracking-tighter">START</span>' : ''}`;
+                list.appendChild(btn);
+            });
+        }
+
+        function openMenu(id) {
+            activeMenuId = id;
+            const menu = currentConfig.menus.find(m => m.id === id);
+            if (!menu) return;
+
+            document.getElementById('no-menu-selected').classList.add('hidden');
+            document.getElementById('menu-editor').classList.remove('hidden');
+            renderSidebar();
+
+            document.getElementById('editing-menu-id').textContent = menu.id;
+            document.getElementById('menu-type').value = menu.type || 'standard';
+            document.getElementById('menu-text-content').value = menu.text || '';
+            document.getElementById('is-initial-menu').checked = (id === currentConfig.initialMenuId);
+            
+            toggleMenuTypeUI();
+            renderOptions(menu.options || []);
+        }
+
+        function toggleMenuTypeUI() {
+            const isOperator = document.getElementById('menu-type').value === 'operator';
+            document.getElementById('options-section').style.display = isOperator ? 'none' : 'block';
+        }
+
+        function renderOptions(options) {
+            const container = document.getElementById('options-list');
+            container.innerHTML = '';
+            options.forEach(opt => addOptionRow(opt));
+        }
+
+        function addOptionRow(opt = { text: '', target: '' }) {
+            const template = document.getElementById('option-row-template');
+            const clone = template.content.cloneNode(true);
+            const row = clone.querySelector('div');
+            
+            row.querySelector('.opt-text').value = opt.text;
+            const select = row.querySelector('.opt-target');
+            
+            // Populate target dropdown
+            currentConfig.menus.forEach(m => {
+                const o = document.createElement('option');
+                o.value = m.id;
+                o.textContent = m.id;
+                if (m.id === opt.target) o.selected = true;
+                select.appendChild(o);
+            });
+
+            row.querySelector('.remove-option-btn').onclick = () => row.remove();
+            document.getElementById('options-list').appendChild(row);
+        }
+
+        function createNewMenu() {
+            document.getElementById('new-menu-modal').classList.add('show');
+            const input = document.getElementById('new-menu-id-input');
+            input.value = '';
+            input.focus();
+        }
+
+        function closeModal() { document.getElementById('new-menu-modal').classList.remove('show'); }
+
+        function confirmCreateMenu() {
+            const id = document.getElementById('new-menu-id-input').value.trim().replace(/\s+/g, '_');
+            if (!id) return;
+            if (currentConfig.menus.some(m => m.id === id)) return alert("ID already exists!");
+            
+            currentConfig.menus.push({ id, text: "Welcome to this step...", options: [], type: 'standard' });
+            closeModal();
+            openMenu(id);
+        }
+
+        async function saveConfig() {
+            // Update current config object from UI
+            currentConfig.botName = document.getElementById('bot-name').value;
+            currentConfig.welcomeGreeting = document.getElementById('welcome-greeting').value;
+
+            if (activeMenuId) {
+                const m = currentConfig.menus.find(x => x.id === activeMenuId);
+                if (m) {
+                    m.type = document.getElementById('menu-type').value;
+                    m.text = document.getElementById('menu-text-content').value;
+                    if (document.getElementById('is-initial-menu').checked) currentConfig.initialMenuId = activeMenuId;
+                    
+                    if (m.type === 'standard') {
+                        const rows = document.querySelectorAll('#options-list > div');
+                        m.options = Array.from(rows).map(r => ({
+                            text: r.querySelector('.opt-text').value,
+                            target: r.querySelector('.opt-target').value
+                        })).filter(o => o.text);
+                    } else m.options = [];
+                }
+            }
+
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: adminPassword, config: currentConfig })
+                });
+                if (response.ok) {
+                    showToast("Config saved successfully!");
+                    renderSidebar();
+                } else {
+                    const data = await response.json();
+                    alert("Error saving: " + data.error);
+                }
+            } catch (err) { alert("Network error saving config."); }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function deleteActiveMenu() {
+            if (!activeMenuId) return;
+            if (activeMenuId === currentConfig.initialMenuId) return alert("Cannot delete entry point.");
+            if (!confirm(`Permanently delete ${activeMenuId}?`)) return;
+            currentConfig.menus = currentConfig.menus.filter(m => m.id !== activeMenuId);
+            activeMenuId = null;
+            document.getElementById('menu-editor').classList.add('hidden');
+            document.getElementById('no-menu-selected').classList.remove('hidden');
+            renderSidebar();
+        }
+
+        // Periodic Ping to check server status
+        async function checkStatus() {
+            try {
+                const res = await fetch('/api/config');
+                if (res.ok) {
+                    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-green-500";
+                    document.getElementById('status-text').textContent = "Server Online";
+                }
+            } catch (e) {
+                document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-red-500";
+                document.getElementById('status-text').textContent = "Server Offline";
+            }
+        }
+        setInterval(checkStatus, 5000);
+        checkStatus();
+
+        dbg("Admin Dashboard Loaded - Single File Mode");
+    </script>
+</body>
+</html>

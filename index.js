@@ -9,6 +9,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+});
+
 // Main Webhook Endpoint for JivoChat
 app.post('/jivo-webhook', async (req, res) => {
     try {
@@ -56,12 +61,18 @@ app.get('/api/config', (req, res) => {
 });
 
 app.post('/api/admin-login', (req, res) => {
+    console.log("POST /api/admin-login called");
     const { password } = req.body;
-    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+    console.log("Request body password:", password);
+    const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || 'admin123').trim();
+    
+    console.log(`Login attempt received. Password provided length: ${password ? password.length : 0}`);
     
     if (password === ADMIN_PASSWORD) {
+        console.log("Login successful");
         res.status(200).json({ success: true });
     } else {
+        console.log("Login failed: Invalid password");
         res.status(401).json({ error: 'Invalid password' });
     }
 });
@@ -102,6 +113,8 @@ app.post('/api/chat', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`JivoChat bot server running on port ${PORT}`);
+    const pass = (process.env.ADMIN_PASSWORD || "admin123").trim();
+    console.log(`Debug: ADMIN_PASSWORD loaded correctly. (Length: ${pass.length})`);
 });
 
 require('./updateEnv'); // Auto-update .env with IP
