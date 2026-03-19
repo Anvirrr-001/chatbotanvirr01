@@ -1,5 +1,6 @@
-let currentConfig = null;
+let currentConfig = { menus: [], initialMenuId: "main_menu", botName: "", welcomeGreeting: "" };
 let adminPassword = '';
+let activeMenuId = null;
 
 async function login() {
     const pass = document.getElementById('admin-pass').value;
@@ -18,7 +19,6 @@ async function login() {
                 currentConfig = await configRes.json();
                 adminPassword = pass;
                 
-                // Show dashboard
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('dashboard').classList.remove('hidden');
                 
@@ -33,130 +33,160 @@ async function login() {
 }
 
 function renderDashboard() {
-    if (!currentConfig) return;
-
     document.getElementById('bot-name').value = currentConfig.botName || "";
     document.getElementById('welcome-greeting').value = currentConfig.welcomeGreeting || "";
-    document.getElementById('menu-text').value = currentConfig.welcomeMenuText || "";
+    renderSidebar();
+    
+    if (activeMenuId) openMenu(activeMenuId);
+}
 
-    // Render Welcome Menu Buttons
-    const menuList = document.getElementById('menu-buttons-list');
-    menuList.innerHTML = '';
-    (currentConfig.welcomeMenu || []).forEach((btn, idx) => {
-        const div = document.createElement('div');
-        div.className = "flex justify-between items-center bg-gray-800 p-2 px-3 rounded text-sm";
-        div.innerHTML = `
-            <span>${btn}</span>
-            <button onclick="removeButton(${idx})" class="text-gray-500 hover:text-red-500"><i class="fas fa-times"></i></button>
+function renderSidebar() {
+    const sidebar = document.getElementById('menu-list-sidebar');
+    sidebar.innerHTML = '';
+    
+    currentConfig.menus.forEach(menu => {
+        const isInitial = menu.id === currentConfig.initialMenuId;
+        const btn = document.createElement('button');
+        btn.className = `w-full text-left p-3 rounded-lg text-sm transition-all flex justify-between items-center ${activeMenuId === menu.id ? 'bg-blue-600 text-white font-bold' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`;
+        btn.onclick = () => openMenu(menu.id);
+        
+        btn.innerHTML = `
+            <span>${menu.id}</span>
+            ${isInitial ? '<span class="text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded-full">START</span>' : ''}
         `;
-        menuList.appendChild(div);
-    });
-
-    // Render Keywords
-    const kwContainer = document.getElementById('keywords-container');
-    kwContainer.innerHTML = '';
-    (currentConfig.keywords || []).forEach((kw, idx) => {
-        addKeywordCard(kw, idx);
+        sidebar.appendChild(btn);
     });
 }
 
-function addButton() {
-    const txt = document.getElementById('new-button-text').value.trim();
-    if (!txt) return;
-    if (!currentConfig.welcomeMenu) currentConfig.welcomeMenu = [];
-    currentConfig.welcomeMenu.push(txt);
-    document.getElementById('new-button-text').value = '';
-    renderDashboard();
+function openMenu(id) {
+    activeMenuId = id;
+    const menu = currentConfig.menus.find(m => m.id === id);
+    if (!menu) return;
+
+    document.getElementById('no-menu-selected').classList.add('hidden');
+    document.getElementById('menu-editor').classList.remove('hidden');
+    
+    renderSidebar(); // Update highlighting
+
+    document.getElementById('editing-menu-id').textContent = menu.id;
+    document.getElementById('menu-type').value = menu.type || 'standard';
+    document.getElementById('menu-text-content').value = menu.text || '';
+    document.getElementById('is-initial-menu').checked = (id === currentConfig.initialMenuId);
+    
+    toggleMenuTypeUI();
+    renderOptions(menu.options || []);
 }
 
-function removeButton(idx) {
-    currentConfig.welcomeMenu.splice(idx, 1);
-    renderDashboard();
-}
-
-function addKeywordCard(kw = {}, idx = null) {
-    const template = document.getElementById('keyword-template');
-    const clone = template.content.cloneNode(true);
-    const card = clone.querySelector('div');
-
-    if (kw.trigger) card.querySelector('.kw-trigger').value = kw.trigger;
-    if (kw.exactMatch !== undefined) card.querySelector('.kw-match').value = String(kw.exactMatch);
-    if (kw.responseType) {
-        card.querySelector('.kw-type').value = kw.responseType;
-        if (kw.responseType === 'menu') card.querySelector('.options-container').classList.remove('hidden');
+function toggleMenuTypeUI() {
+    const type = document.getElementById('menu-type').value;
+    const optionsSection = document.getElementById('options-section');
+    if (type === 'operator') {
+        optionsSection.classList.add('hidden');
+    } else {
+        optionsSection.classList.remove('hidden');
     }
-    if (kw.text) card.querySelector('.kw-text').value = kw.text;
-    if (kw.options) card.querySelector('.kw-options').value = kw.options.join(', ');
-
-    card.querySelector('.remove-kw-btn').onclick = () => {
-        card.remove();
-    };
-
-    document.getElementById('keywords-container').prepend(card);
 }
 
-function addNewKeyword() {
-    addKeywordCard({ trigger: '', responseType: 'text', exactMatch: false });
+function renderOptions(options) {
+    const list = document.getElementById('options-list');
+    list.innerHTML = '';
+    
+    options.forEach(opt => addOptionRow(opt));
 }
 
-function updateKwUI(select) {
-    const container = select.closest('.glass').querySelector('.options-container');
-    if (select.value === 'menu') container.classList.remove('hidden');
-    else container.classList.add('hidden');
+function addOptionRow(opt = { text: '', target: '' }) {
+    const template = document.getElementById('option-row-template');
+    const clone = template.content.cloneNode(true);
+    const row = clone.querySelector('div');
+    
+    row.querySelector('.opt-text').value = opt.text;
+    
+    const select = row.querySelector('.opt-target');
+    // Populate select with all available menu IDs
+    currentConfig.menus.forEach(m => {
+        const option = document.createElement('option');
+        option.value = m.id;
+        option.textContent = m.id;
+        if (m.id === opt.target) option.selected = true;
+        select.appendChild(option);
+    });
+
+    row.querySelector('.remove-option-btn').onclick = () => row.remove();
+    document.getElementById('options-list').appendChild(row);
+}
+
+function createNewMenu() {
+    const id = prompt("Enter a unique ID for the new menu/step (e.g. deposit_info):");
+    if (!id) return;
+    if (currentConfig.menus.find(m => m.id === id)) return alert("ID already exists!");
+
+    const newMenu = { id: id, text: "New step text...", options: [], type: 'standard' };
+    currentConfig.menus.push(newMenu);
+    openMenu(id);
+}
+
+function deleteActiveMenu() {
+    if (!activeMenuId) return;
+    if (activeMenuId === currentConfig.initialMenuId) return alert("Cannot delete the entry point menu!");
+    if (!confirm(`Are you sure you want to delete menu '${activeMenuId}'?`)) return;
+
+    currentConfig.menus = currentConfig.menus.filter(m => m.id !== activeMenuId);
+    activeMenuId = null;
+    document.getElementById('menu-editor').classList.add('hidden');
+    document.getElementById('no-menu-selected').classList.remove('hidden');
+    renderSidebar();
 }
 
 async function saveConfig() {
-    // Collect data from UI back into a config object
-    const newConfig = {
-        botName: document.getElementById('bot-name').value,
-        welcomeGreeting: document.getElementById('welcome-greeting').value,
-        welcomeMenuText: document.getElementById('menu-text').value,
-        welcomeMenu: currentConfig.welcomeMenu, // Already synced via add/remove functions
-        keywords: []
-    };
+    // 1. Update Global Settings
+    currentConfig.botName = document.getElementById('bot-name').value;
+    currentConfig.welcomeGreeting = document.getElementById('welcome-greeting').value;
 
-    const kwCards = document.querySelectorAll('#keywords-container > div');
-    kwCards.forEach(card => {
-        const trigger = card.querySelector('.kw-trigger').value.trim();
-        if (!trigger) return;
+    // 2. Sync the currently open menu from its form fields
+    if (activeMenuId) {
+        const menu = currentConfig.menus.find(m => m.id === activeMenuId);
+        if (menu) {
+            menu.type = document.getElementById('menu-type').value;
+            menu.text = document.getElementById('menu-text-content').value;
+            
+            if (document.getElementById('is-initial-menu').checked) {
+                currentConfig.initialMenuId = activeMenuId;
+            }
 
-        const kw = {
-            trigger: trigger,
-            exactMatch: card.querySelector('.kw-match').value === 'true',
-            responseType: card.querySelector('.kw-type').value,
-            text: card.querySelector('.kw-text').value
-        };
-
-        if (kw.responseType === 'menu') {
-            const opts = card.querySelector('.kw-options').value;
-            kw.options = opts.split(',').map(s => s.trim()).filter(s => s);
+            if (menu.type === 'standard') {
+                const optionRows = document.querySelectorAll('#options-list > div');
+                menu.options = Array.from(optionRows).map(row => ({
+                    text: row.querySelector('.opt-text').value,
+                    target: row.querySelector('.opt-target').value
+                })).filter(o => o.text);
+            } else {
+                menu.options = [];
+            }
         }
+    }
 
-        newConfig.keywords.push(kw);
-    });
-
+    // 3. Save to server
     try {
         const response = await fetch('/api/config', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 password: adminPassword,
-                config: newConfig
+                config: currentConfig
             })
         });
 
-        const result = await response.json();
         if (response.ok) {
-            alert("Success! Configuration updated and saved to server.");
-            currentConfig = newConfig;
+            alert("Changes saved and live!");
+            renderSidebar();
         } else {
-            alert("Error: " + result.error);
+            const err = await response.json();
+            alert("Error: " + err.error);
         }
     } catch (e) {
-        alert("Failed to connect to server.");
+        alert("Failed to save. Check connection.");
     }
 }
 
-function logout() {
-    location.reload();
-}
+function logout() { location.reload(); }
+

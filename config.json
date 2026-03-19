@@ -2,22 +2,66 @@
   "botName": "ELON সাহায্যকারী",
   "botAvatar": "https://i.ibb.co/example",
   "welcomeGreeting": "স্বাগতম, কাস্টমার সাপোর্ট আপনাকে শুভেচ্ছ জানাতে পেরে আনন্দিত। 👋",
-  "welcomeMenuText": "আপনার প্রশ্নের টপিক সিলেক্ট করুন।",
-  "welcomeMenu": [
-    "🎥 রেফারেল প্রোগ্রাম",
-    "👑 ভিআইপি ক্লাব",
-    "🎁 বোনাসগুলো",
-    "💰 পেমেন্ট",
-    "👤 এখন আপনি সরাসরি টেলিগ্রামে ELONBET",
-    "👨‍💻 Contact Operator"
+  "initialMenuId": "main_menu",
+  "menus": [
+    {
+      "id": "main_menu",
+      "text": "আপনার প্রশ্নের টপিক সিলেক্ট করুন।",
+      "options": [
+        { "text": "💰 পেমেন্ট", "target": "payment_menu" },
+        { "text": "👨‍💻 Contact Operator", "target": "operator_transfer" }
+      ]
+    },
+    {
+      "id": "payment_menu",
+      "text": "ডিপোজিট না উত্তোলন?",
+      "options": [
+        { "text": "ডিপোজিট তথ্য", "target": "deposit_info_menu" },
+        { "text": "উত্তোলন তথ্য", "target": "withdraw_info_menu" },
+        { "text": "⬅ মেনুতে ফিরে যান", "target": "main_menu" }
+      ]
+    },
+    {
+      "id": "deposit_info_menu",
+      "text": "ডিপোজিট সম্পর্কে বিস্তারিত জানুন:",
+      "options": [
+        { "text": "কিভাবে ডিপোজিট করবো?", "target": "how_to_deposit" },
+        { "text": "ডিপোজিট জমা হয় নি", "target": "operator_transfer" },
+        { "text": "⬅ ফিরে যান", "target": "payment_menu" }
+      ]
+    },
+    {
+      "id": "how_to_deposit",
+      "text": "ডিপোজিট করতে 'Deposit' বাটনে ক্লিক করুন এবং নিয়ম অনুসরণ করুন।",
+      "options": [
+        { "text": "ধন্যবাদ", "target": "main_menu" },
+        { "text": "⬅ ফিরে যান", "target": "deposit_info_menu" }
+      ]
+    },
+    {
+      "id": "withdraw_info_menu",
+      "text": "উত্তোলন সম্পর্কে বিস্তারিত জানুন:",
+      "options": [
+        { "text": "কিভাবে উত্তোলন করবো?", "target": "how_to_withdraw" },
+        { "text": "টাকা পাই নি", "target": "operator_transfer" },
+        { "text": "⬅ ফিরে যান", "target": "payment_menu" }
+      ]
+    },
+    {
+      "id": "how_to_withdraw",
+      "text": "উত্তোলন করতে 'Withdraw' বাটনে ক্লিক করুন এবং আপনার ওয়ালেট নম্বর দিন।",
+      "options": [
+        { "text": "ধন্যবাদ", "target": "main_menu" },
+        { "text": "⬅ ফিরে যান", "target": "withdraw_info_menu" }
+      ]
+    },
+    {
+      "id": "operator_transfer",
+      "type": "operator",
+      "text": "আমি আপনার চ্যাট টি অপারেটর এর কাছে ট্রান্সফার করতেছি।"
+    }
   ],
   "keywords": [
-    {
-      "trigger": "Contact Operator",
-      "exactMatch": false,
-      "responseType": "operator",
-      "text": "অনুগ্রহ করে অপেক্ষা করুন, একজন অপারেটর আপনার সাথে যুক্ত হবেন।"
-    },
     {
       "trigger": "ইতিমধ্যে একটি অনুরোধ জমা দিয়েছি",
       "exactMatch": false,

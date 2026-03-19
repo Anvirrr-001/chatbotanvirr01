@@ -47,99 +47,113 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Basic Settings -->
-            <div class="lg:col-span-1 space-y-6">
-                <div class="card">
-                    <h2 class="text-xl font-bold mb-6 flex items-center">
-                        <i class="fas fa-robot mr-3 text-blue-400"></i> Bot Identity
-                    </h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm text-gray-400 mb-1">Bot Name (প্রোফাইল নাম)</label>
-                            <input type="text" id="bot-name" class="input-field" placeholder="e.g. ELON সাহায্যকারী">
-                        </div>
-                        <div>
-                            <label class="block text-sm text-gray-400 mb-1">Welcome Greeting (স্বাগতম বার্তা)</label>
-                            <textarea id="welcome-greeting" rows="3" class="input-field" placeholder="Default greeting text"></textarea>
-                        </div>
-                        <div>
-                            <label class="block text-sm text-gray-400 mb-1">Menu Help Text</label>
-                            <input type="text" id="menu-text" class="input-field" placeholder="e.g. Select a topic">
-                        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <!-- Sidebar: Menu List -->
+            <div class="lg:col-span-1 space-y-4">
+                <div class="card h-full">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold">Menus / Steps</h2>
+                        <button onclick="createNewMenu()" class="text-blue-400 hover:text-blue-300"><i class="fas fa-plus-circle text-xl"></i></button>
                     </div>
-                </div>
-
-                <div class="card">
-                    <h2 class="text-xl font-bold mb-6 flex items-center">
-                        <i class="fas fa-th-large mr-3 text-purple-400"></i> Initial Buttons
-                    </h2>
-                    <div id="menu-buttons-list" class="space-y-2 mb-4">
-                        <!-- Dynamic Buttons -->
-                    </div>
-                    <div class="flex gap-2">
-                        <input type="text" id="new-button-text" class="input-field py-2" placeholder="New button text">
-                        <button onclick="addButton()" class="bg-blue-600 p-2 px-4 rounded-lg hover:bg-blue-700">
-                            <i class="fas fa-plus"></i>
-                        </button>
+                    <div id="menu-list-sidebar" class="space-y-2 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
+                        <!-- List of Menu IDs will appear here -->
                     </div>
                 </div>
             </div>
 
-            <!-- Keyword Manager -->
-            <div class="lg:col-span-2 space-y-6">
-                <div class="card h-full">
+            <!-- Main: Menu Editor -->
+            <div class="lg:col-span-3 space-y-6">
+                <!-- Global Settings (Bot Name etc.) -->
+                <div class="card">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs uppercase text-gray-400 mb-1">Bot Name</label>
+                            <input type="text" id="bot-name" class="input-field" placeholder="Bot Name">
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase text-gray-400 mb-1">Welcome Greeting</label>
+                            <input type="text" id="welcome-greeting" class="input-field" placeholder="Hello!">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Menu Editor -->
+                <div id="menu-editor" class="card hidden border-t-4 border-blue-500">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-bold flex items-center">
-                            <i class="fas fa-key mr-3 text-green-400"></i> Dynamic Keywords (কিওয়ার্ড উত্তর)
+                            <i class="fas fa-edit mr-3 text-blue-400"></i> Editing: <span id="editing-menu-id" class="ml-2 text-blue-300"></span>
                         </h2>
-                        <button onclick="addNewKeyword()" class="bg-green-600 hover:bg-green-700 p-2 px-4 rounded-lg text-sm font-bold">
-                            <i class="fas fa-plus mr-1"></i> Add Keyword
+                        <button onclick="deleteActiveMenu()" id="delete-menu-btn" class="text-red-500 hover:text-red-400 text-sm">
+                            <i class="fas fa-trash mr-1"></i> Delete Menu
                         </button>
                     </div>
-                    
-                    <div id="keywords-container" class="space-y-4 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
-                        <!-- Dynamic Keyword cards -->
+
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-400 mb-1">Menu Type</label>
+                                <select id="menu-type" class="input-field" onchange="toggleMenuTypeUI()">
+                                    <option value="standard">Standard (Text + Buttons)</option>
+                                    <option value="operator">Operator Transfer</option>
+                                </select>
+                            </div>
+                            <div id="initial-menu-toggle-container">
+                                <label class="block text-xs font-bold text-gray-400 mb-1">Entry Point?</label>
+                                <div class="flex items-center mt-2">
+                                    <input type="checkbox" id="is-initial-menu" class="w-5 h-5 rounded cursor-pointer">
+                                    <span class="ml-2 text-sm text-gray-300">Set as starting menu</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 mb-1">Message Text (বট যা বলবে)</label>
+                            <textarea id="menu-text-content" rows="4" class="input-field" placeholder="Enter message..."></textarea>
+                        </div>
+
+                        <div id="options-section">
+                            <div class="flex justify-between items-center mb-4">
+                                <label class="block text-xs font-bold text-gray-400">Buttons / Options</label>
+                                <button onclick="addOptionRow()" class="text-xs bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded">
+                                    <i class="fas fa-plus mr-1"></i> Add Button
+                                </button>
+                            </div>
+                            <div id="options-list" class="space-y-3">
+                                <!-- Option rows -->
+                            </div>
+                        </div>
                     </div>
+                </div>
+
+                <div id="no-menu-selected" class="card text-center py-20 bg-opacity-50">
+                    <i class="fas fa-mouse-pointer text-5xl text-gray-600 mb-4"></i>
+                    <p class="text-gray-400">Please select a menu from the sidebar to edit or create a new one.</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Templates -->
-    <template id="keyword-template">
-        <div class="p-5 glass rounded-xl relative group border border-gray-700 hover:border-blue-500 transition-colors">
-            <button class="absolute top-4 right-4 text-gray-500 hover:text-red-500 remove-kw-btn">
-                <i class="fas fa-trash"></i>
-            </button>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label class="block text-xs uppercase text-gray-400 mb-1">Trigger (কিওয়ার্ড)</label>
-                    <input type="text" class="kw-trigger input-field text-sm" placeholder="User says this...">
-                </div>
-                <div>
-                    <label class="block text-xs uppercase text-gray-400 mb-1">Match Type</label>
-                    <select class="kw-match input-field text-sm">
-                        <option value="false">Partial Match (ধরে নেবে)</option>
-                        <option value="true">Exact Match (পুরো মিল)</option>
-                    </select>
-                </div>
+    <!-- Option Row Template -->
+    <template id="option-row-template">
+        <div class="flex flex-col md:flex-row gap-3 p-4 glass rounded-lg relative group">
+            <div class="flex-1">
+                <label class="block text-[10px] text-gray-500 uppercase">Button Label</label>
+                <input type="text" class="opt-text input-field py-2 text-sm" placeholder="e.g. Deposit">
             </div>
-            <div class="mb-4">
-                <label class="block text-xs uppercase text-gray-400 mb-1">Response Type</label>
-                <select class="kw-type input-field text-sm mb-2" onchange="updateKwUI(this)">
-                    <option value="text">Just Text Reply</option>
-                    <option value="menu">Text + Menu Buttons</option>
-                    <option value="operator">Transfer to Operator</option>
+            <div class="flex-1">
+                <label class="block text-[10px] text-gray-500 uppercase">Target Menu</label>
+                <select class="opt-target input-field py-2 text-sm">
+                    <!-- Dynamic menu list -->
                 </select>
-                <textarea class="kw-text input-field text-sm" rows="2" placeholder="Bot's reply..."></textarea>
             </div>
-            <div class="options-container hidden">
-                <label class="block text-xs uppercase text-gray-400 mb-1 font-bold text-blue-300">Menu Options (Separate by comma)</label>
-                <input type="text" class="kw-options input-field text-sm" placeholder="Option 1, Option 2, Option 3">
+            <div class="flex items-end">
+                <button class="remove-option-btn text-gray-600 hover:text-red-500 mb-2">
+                    <i class="fas fa-trash"></i>
+                </button>
             </div>
         </div>
     </template>
+
 
     <script src="admin.js"></script>
 </body>
