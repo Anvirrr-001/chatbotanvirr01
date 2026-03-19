@@ -23,7 +23,7 @@
       "text": "ডিপোজিট নিয়ে আপনার প্রশ্নটি উল্লেখ করুন।",
       "type": "standard",
       "options": [
-        { "text": "ডিপোজিট জমা হয় নি", "target": "payment_followup" },
+        { "text": "ডিপোজিট জমা হয় নি", "target": "deposit_methods_followup" },
         { "text": "দীর্ঘ উত্তোলন", "target": "payment_followup" },
         { "text": "ডিপোজিট তথ্য", "target": "deposit_info" },
         { "text": "উত্তোলন তথ্য", "target": "withdraw_info_menu" },
@@ -74,6 +74,39 @@
         { "field": "dateTime", "question": "আপনি এই উত্তোলনটি কখন করেছেন? তারিখ এবং সময় অনুগ্রহ করে 📅⏰" }
       ],
       "summaryTemplate": "আসুন আপনি যে তথ্যগুলো দিয়েছেন তা পর্যালোচনা করি:\n\nইউজার আইডি: {userId}\nপরিমাণ: {amount}\nওয়ালেট নম্বর: {wallet}\nউত্তোলন এর তারিখ-সময়: {dateTime}\n\nসব কিছু ঠিক আছে?",
+      "confirmationTarget": "operator_transfer"
+    },
+    {
+      "id": "deposit_methods_followup",
+      "text": "অনুগ্রহ করে আপনি যে পেমেন্ট পদ্ধতিটি ব্যবহার করেছেন তা নির্বাচন করুন। এটি আমাদেরকে আপনার আমানত দ্রুত অনুসন্ধান করতে সাহায্য করে 👇",
+      "type": "standard",
+      "options": [
+        { "text": "Bkash FAST", "target": "deposit_info_intro" },
+        { "text": "Nagad FAST", "target": "deposit_info_intro" },
+        { "text": "Rocket", "target": "deposit_info_intro" }
+      ]
+    },
+    {
+      "id": "deposit_info_intro",
+      "text": "দারুন পছন্দ! এখন, আপনার আমানত সম্পর্কে আমাদের আরও কিছু তথ্যের প্রয়োজন হবে। আপনাকে লিখতে হবেঃ\n\n১, পরিমাণ\n২. ইউজার আইডি\n৩. ট্রানজেকশন আইডি\n৪. ওয়ালেট নম্বর\n৫. জমা দেওয়ার তারিখ-সময়\n\nএর পরে, আপনার ডায়ালগটি অপারেটরের কাছে স্থানান্তরিত হবে এবং তিনি নিশ্চিত করবেন যে আপনার আবেদনটি গৃহীত হয়েছে।\n\nএগিয়ে যাওয়ার জন্য প্রস্তুত?",
+      "type": "standard",
+      "options": [
+        { "text": "হ্যাঁ, আমি প্রস্তুত", "target": "deposit_data_collection" },
+        { "text": "আমি ইতিমধ্যে একটি অনুরোধ জমা দিয়েছি", "target": "operator_transfer" },
+        { "text": "মেনুতে ফিরে যান", "target": "main_menu" }
+      ]
+    },
+    {
+      "id": "deposit_data_collection",
+      "type": "data_collection",
+      "steps": [
+        { "field": "amount", "question": "আপনার ডিপোজিটের পরিমাণ কত? 💰" },
+        { "field": "userId", "question": "আপনার ইউজার আইডি কত? 🆔" },
+        { "field": "txnId", "question": "আপনার ট্রানজেকশন আইডি (Transaction ID) কত? 📑" },
+        { "field": "wallet", "question": "আপনার ডিপোজিটকৃত ওয়ালেট নম্বরটি প্রদান করুন 🏦" },
+        { "field": "dateTime", "question": "জমা দেওয়ার তারিখ ও সময় কি ছিল? 📅⏰" }
+      ],
+      "summaryTemplate": "আসুন আপনি যে তথ্যগুলো দিয়েছেন তা পর্যালোচনা করি:\n\nইউজার আইডি: {userId}\nপরিমাণ: {amount}\nট্রানজেকশন আইডি: {txnId}\nওয়ালেট নম্বর: {wallet}\nজমা দেওয়ার তারিখ-সময়: {dateTime}\n\nসব কিছু ঠিক আছে?",
       "confirmationTarget": "operator_transfer"
     },
     {
