@@ -109,6 +109,7 @@
                                 <select id="menu-type" class="input-field" onchange="toggleMenuTypeUI()">
                                     <option value="standard">Standard (Buttons)</option>
                                     <option value="operator">Operator Transfer</option>
+                                    <option value="data_collection">Data Collection Flow (Q&A)</option>
                                 </select>
                             </div>
                             <div>
@@ -120,9 +121,40 @@
                             </div>
                         </div>
 
-                        <div>
+                        <div id="standard-fields">
                             <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2">Bot Message Text</label>
                             <textarea id="menu-text-content" rows="4" class="input-field" placeholder="What should the bot say?"></textarea>
+                        </div>
+
+                        <div id="data-collection-fields" class="space-y-6 hidden">
+                            <div class="p-4 bg-blue-900/20 border border-blue-800 rounded-xl">
+                                <h3 class="text-sm font-bold text-blue-300 mb-2 flex items-center">
+                                    <i class="fas fa-info-circle mr-2"></i> How it works
+                                </h3>
+                                <p class="text-xs text-blue-200/70 leading-relaxed">
+                                    The bot will ask each question in sequence. After collecting all answers, it will show the summary using the template below. Use <b>{field_name}</b> in the template to insert answers.
+                                </p>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <label class="block text-[10px] font-bold uppercase text-gray-500">Sequential Questions</label>
+                                    <button onclick="addStepRow()" class="text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/40 px-3 py-1.5 rounded-lg border border-purple-900 transition-all">
+                                        <i class="fas fa-plus mr-1"></i> Add Question
+                                    </button>
+                                </div>
+                                <div id="steps-list" class="space-y-2"></div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2">Summary Template</label>
+                                <textarea id="summary-template" rows="4" class="input-field text-sm font-mono" placeholder="Summary text... use {field_name}"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2">Confirm Target (Where to go after Yes)</label>
+                                <select id="confirm-target" class="input-field"></select>
+                            </div>
                         </div>
 
                         <div id="options-section">
@@ -147,20 +179,26 @@
 
     <!-- Templates & Overlays -->
     <template id="option-row-template">
-        <div class="flex flex-col md:flex-row gap-4 p-5 glass rounded-xl relative group hover:bg-white/[0.05] transition-all">
+        <div class="flex flex-col md:flex-row gap-4 p-4 glass rounded-xl relative group hover:bg-white/[0.05] transition-all border border-transparent hover:border-blue-500/30">
             <div class="flex-1">
-                <label class="block text-[10px] text-gray-500 uppercase mb-1">Button Label</label>
-                <input type="text" class="opt-text input-field py-2 text-sm" placeholder="e.g. Help">
+                <input type="text" class="opt-text input-field py-2 text-sm" placeholder="Button Label">
             </div>
             <div class="flex-1">
-                <label class="block text-[10px] text-gray-500 uppercase mb-1">Target Action/Step</label>
                 <select class="opt-target input-field py-2 text-sm"></select>
             </div>
-            <div class="flex items-end">
-                <button class="remove-option-btn text-gray-600 hover:text-red-500 p-2 transition-colors">
-                    <i class="fas fa-times-circle text-xl"></i>
-                </button>
+            <button class="remove-option-btn text-gray-600 hover:text-red-500 p-2"><i class="fas fa-times"></i></button>
+        </div>
+    </template>
+
+    <template id="step-row-template">
+        <div class="flex gap-2 items-start p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
+            <div class="w-24">
+                <input type="text" class="step-field input-field py-1.5 text-xs font-mono" placeholder="field_id">
             </div>
+            <div class="flex-1">
+                <input type="text" class="step-question input-field py-1.5 text-xs" placeholder="Question to ask...">
+            </div>
+            <button class="remove-step-btn text-gray-500 hover:text-red-400 p-1.5"><i class="fas fa-trash-alt"></i></button>
         </div>
     </template>
 
@@ -285,19 +323,43 @@
             document.getElementById('menu-text-content').value = menu.text || '';
             document.getElementById('is-initial-menu').checked = (id === currentConfig.initialMenuId);
             
+            // Load Data Collection specific fields
+            document.getElementById('summary-template').value = menu.summaryTemplate || '';
+            renderSteps(menu.steps || []);
+            
+            // Populate Confirm Target dropdown
+            const confirmSelect = document.getElementById('confirm-target');
+            confirmSelect.innerHTML = '<option value="">(Select Target)</option>';
+            currentConfig.menus.forEach(m => {
+                const o = document.createElement('option');
+                o.value = m.id;
+                o.textContent = m.id;
+                if (m.id === menu.confirmationTarget) o.selected = true;
+                confirmSelect.appendChild(o);
+            });
+
             toggleMenuTypeUI();
             renderOptions(menu.options || []);
         }
 
         function toggleMenuTypeUI() {
-            const isOperator = document.getElementById('menu-type').value === 'operator';
-            document.getElementById('options-section').style.display = isOperator ? 'none' : 'block';
+            const type = document.getElementById('menu-type').value;
+            document.getElementById('options-section').style.display = (type === 'standard') ? 'block' : 'none';
+            document.getElementById('standard-fields').style.display = (type === 'standard' || type === 'operator') ? 'block' : 'none';
+            document.getElementById('data-collection-fields').classList.toggle('hidden', type !== 'data_collection');
         }
 
         function renderOptions(options) {
             const container = document.getElementById('options-list');
             container.innerHTML = '';
             options.forEach(opt => addOptionRow(opt));
+        }
+
+        function renderSteps(steps) {
+            const container = document.getElementById('steps-list');
+            container.innerHTML = '';
+            steps.forEach(s => addStepRow(s));
+            if (steps.length === 0) addStepRow(); // At least one empty row
         }
 
         function addOptionRow(opt = { text: '', target: '' }) {
@@ -307,8 +369,8 @@
             
             row.querySelector('.opt-text').value = opt.text;
             const select = row.querySelector('.opt-target');
+            select.innerHTML = '<option value="">(Select Target)</option>';
             
-            // Populate target dropdown
             currentConfig.menus.forEach(m => {
                 const o = document.createElement('option');
                 o.value = m.id;
@@ -319,6 +381,18 @@
 
             row.querySelector('.remove-option-btn').onclick = () => row.remove();
             document.getElementById('options-list').appendChild(row);
+        }
+
+        function addStepRow(step = { field: '', question: '' }) {
+            const template = document.getElementById('step-row-template');
+            const clone = template.content.cloneNode(true);
+            const row = clone.querySelector('div');
+            
+            row.querySelector('.step-field').value = step.field;
+            row.querySelector('.step-question').value = step.question;
+
+            row.querySelector('.remove-step-btn').onclick = () => row.remove();
+            document.getElementById('steps-list').appendChild(row);
         }
 
         function createNewMenu() {
@@ -341,6 +415,9 @@
         }
 
         async function saveConfig() {
+            const btn = document.querySelector('button[onclick="saveConfig()"]');
+            btn.disabled = true;
+
             // Update current config object from UI
             currentConfig.botName = document.getElementById('bot-name').value;
             currentConfig.welcomeGreeting = document.getElementById('welcome-greeting').value;
@@ -358,6 +435,15 @@
                             text: r.querySelector('.opt-text').value,
                             target: r.querySelector('.opt-target').value
                         })).filter(o => o.text);
+                    } else if (m.type === 'data_collection') {
+                        const sRows = document.querySelectorAll('#steps-list > div');
+                        m.steps = Array.from(sRows).map(r => ({
+                            field: r.querySelector('.step-field').value.trim(),
+                            question: r.querySelector('.step-question').value.trim()
+                        })).filter(s => s.field && s.question);
+                        m.summaryTemplate = document.getElementById('summary-template').value;
+                        m.confirmationTarget = document.getElementById('confirm-target').value;
+                        m.options = [];
                     } else m.options = [];
                 }
             }

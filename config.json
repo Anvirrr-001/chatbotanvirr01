@@ -9,6 +9,7 @@
       "text": "আপনার প্রশ্নের টপিক সিলেক্ট করুন।",
       "type": "standard",
       "options": [
+        { "text": "বিকল্প জমা পদ্ধতি (bKash P2P) ব্যবহারের...", "target": "bkash_p2p_info" },
         { "text": "👥 রেফারেল প্রোগ্রাম", "target": "referral_menu" },
         { "text": "👑 ভিআইপি ক্লাব", "target": "vip_club_menu" },
         { "text": "🎁 বোনাসগুলো", "target": "bonus_menu" },
@@ -25,9 +26,55 @@
         { "text": "ডিপোজিট জমা হয় নি", "target": "payment_followup" },
         { "text": "দীর্ঘ উত্তোলন", "target": "payment_followup" },
         { "text": "ডিপোজিট তথ্য", "target": "deposit_info" },
-        { "text": "উত্তোলন তথ্য", "target": "withdraw_info" },
+        { "text": "উত্তোলন তথ্য", "target": "withdraw_info_menu" },
         { "text": "← মেনুতে ফিরে যান", "target": "main_menu" }
       ]
+    },
+    {
+      "id": "withdraw_info_menu",
+      "text": "উত্তোলন সম্পর্কে আপনার প্রশ্ন উল্লেখ করুন",
+      "type": "standard",
+      "options": [
+        { "text": "কিভাবে উত্তোলন করবো?", "target": "withdraw_how_to" },
+        { "text": "উত্তোলন করতে পারতেছি না", "target": "withdraw_issue" },
+        { "text": "উত্তোলন ফি", "target": "withdraw_fees" },
+        { "text": "সর্বনিম্ন / সর্বোচ্চ উত্তোলন এর পরিমাণ", "target": "withdraw_limits" },
+        { "text": "উত্তোলন করেছি কিন্তু টাকা এখন ও পাই নি", "target": "withdraw_methods_followup" },
+        { "text": "👨‍💻 Contact Operator", "target": "operator_transfer" },
+        { "text": "← মেনুতে ফিরে যান", "target": "main_menu" }
+      ]
+    },
+    {
+      "id": "withdraw_methods_followup",
+      "text": "দয়া করে আপনি যে পেমেন্ট পদ্ধতিটি ব্যবহার করেছেন তা নির্বাচন করুন। এটি আমাদেরকে আপনার উত্তোলনটি দ্রুত অনুসরণ করতে সাহায্য করে 👇",
+      "type": "standard",
+      "options": [
+        { "text": "Bkash FAST", "target": "withdraw_info_intro" },
+        { "text": "Nagad FAST", "target": "withdraw_info_intro" },
+        { "text": "Bkash Nagad Rocket Upay", "target": "withdraw_info_intro" }
+      ]
+    },
+    {
+      "id": "withdraw_info_intro",
+      "text": "দারুন পছন্দ! এখন, আপনার আমানত সম্পর্কে আমাদের আরও কিছু তথ্যের প্রয়োজন হবে। আপনাকে লিখতে হবেঃ\n\n১, পরিমাণ\n২. ইউজার আইডি\n৩. ওয়ালেট নম্বর\n৪. উত্তোলন এর তারিখ-সময়\n\nএর পরে, আপনার ডায়ালগটি অপারেটরের কাছে স্থানান্তরিত হবে এবং তিনি নিশ্চিত করবেন যে আপনার আবেদনটি গৃহীত হয়েছে।\n\nএগিয়ে যাওয়ার জন্য প্রস্তুত?",
+      "type": "standard",
+      "options": [
+        { "text": "হ্যাঁ, আমি প্রস্তুত", "target": "withdraw_data_collection" },
+        { "text": "আমি ইতিমধ্যে একটি অনুরোধ জমা দিয়েছি", "target": "operator_transfer" },
+        { "text": "মেনুতে ফিরে যান", "target": "main_menu" }
+      ]
+    },
+    {
+      "id": "withdraw_data_collection",
+      "type": "data_collection",
+      "steps": [
+        { "field": "amount", "question": "আপনার উত্তোলনের পরিমাণ কত? 💰" },
+        { "field": "userId", "question": "আপনার ইউজার আইডি কত? 🆔" },
+        { "field": "wallet", "question": "শেষে, আপনি কি উত্তোলনের জন্য ব্যবহৃত ওয়ালেট নম্বরটি শেয়ার করতে পারবেন? 🏦" },
+        { "field": "dateTime", "question": "আপনি এই উত্তোলনটি কখন করেছেন? তারিখ এবং সময় অনুগ্রহ করে 📅⏰" }
+      ],
+      "summaryTemplate": "আসুন আপনি যে তথ্যগুলো দিয়েছেন তা পর্যালোচনা করি:\n\nইউজার আইডি: {userId}\nপরিমাণ: {amount}\nওয়ালেট নম্বর: {wallet}\nউত্তোলন এর তারিখ-সময়: {dateTime}\n\nসব কিছু ঠিক আছে?",
+      "confirmationTarget": "operator_transfer"
     },
     {
       "id": "payment_followup",
@@ -40,58 +87,19 @@
       ]
     },
     {
-      "id": "deposit_info",
-      "text": "ডিপোজিট করার জন্য 'Deposit' বাটনে ক্লিক করুন এবং আপনার পছন্দের পেমেন্ট মেথড (Bkash, Nagad, etc.) সিলেক্ট করে নিয়ম অনুসরণ করুন।",
-      "type": "standard",
-      "options": [
-        { "text": "← ফিরে যান", "target": "payment_menu" }
-      ]
-    },
-    {
-      "id": "withdraw_info",
-      "text": "উত্তোলন করার জন্য 'Withdraw' বাটনে ক্লিক করুন এবং আপনার ওয়ালেট নম্বর দিয়ে উত্তোলন রিকোয়েস্ট সাবমিট করুন।",
-      "type": "standard",
-      "options": [
-        { "text": "← ফিরে যান", "target": "payment_menu" }
-      ]
-    },
-    {
-      "id": "referral_menu",
-      "text": "আমাদের রেফারেল প্রোগ্রাম সম্পর্কে বিস্তারিত জানতে আপনার একাউন্টের 'Referral' সেকশনে ভিজিট করুন।",
-      "type": "standard",
-      "options": [
-        { "text": "← মেনুতে ফিরে যান", "target": "main_menu" }
-      ]
-    },
-    {
-      "id": "vip_club_menu",
-      "text": "ELONBET ভিআইপি ক্লাব মেম্বারশিপের জন্য নিয়মিত গেম খেলুন এবং লেভেল আপ করে বিশেষ সুবিধা উপভোগ করুন।",
-      "type": "standard",
-      "options": [
-        { "text": "← মেনুতে ফিরে যান", "target": "main_menu" }
-      ]
-    },
-    {
-      "id": "bonus_menu",
-      "text": "বর্তমানে আমাদের অনেক আকর্ষণীয় বোনাস অফার চলছে। বিস্তারিত জানতে 'Promotions' পেজ চেক করুন।",
-      "type": "standard",
-      "options": [
-        { "text": "← মেনুতে ফিরে যান", "target": "main_menu" }
-      ]
-    },
-    {
-      "id": "telegram_info",
-      "text": "সরাসরি টেলিগ্রাম বটের মাধ্যমে সহায়তা পেতে এবং আপডেট থাকতে আমাদের টেলিগ্রাম চ্যানেলে যুক্ত হোন।",
-      "type": "standard",
-      "options": [
-        { "text": "← মেনুতে ফিরে যান", "target": "main_menu" }
-      ]
-    },
-    {
       "id": "operator_transfer",
       "type": "operator",
-      "text": "আমি আপনার চ্যাট টি অপারেটর এর কাছে ট্রান্সফার করতেছি।"
-    }
+      "text": "দারুন! আপনাকে আরও সহায়তার জন্য একজন অপারেটরের সাথে যুক্ত করা হচ্ছে। 💰"
+    },
+    { "id": "bkash_p2p_info", "text": "বিকল্প জমা পদ্ধতি (bKash P2P) সম্পর্কে বিস্তারিত তথ্য এখানে থাকবে।", "type": "standard" },
+    { "id": "referral_menu", "text": "রেফারেল প্রোগ্রাম তথ্য...", "type": "standard" },
+    { "id": "vip_club_menu", "text": "ভিআইপি ক্লাব তথ্য...", "type": "standard" },
+    { "id": "bonus_menu", "text": "বোনাস তথ্য...", "type": "standard" },
+    { "id": "telegram_info", "text": "টেলিগ্রাম তথ্য...", "type": "standard" },
+    { "id": "withdraw_how_to", "text": "কিভাবে উত্তোলন করবেন তার নিয়ম...", "type": "standard" },
+    { "id": "withdraw_issue", "text": "উত্তোলন সমস্যার সমাধান...", "type": "standard" },
+    { "id": "withdraw_fees", "text": "উত্তোলন ফি সংক্রান্ত তথ্য...", "type": "standard" },
+    { "id": "withdraw_limits", "text": "সীমা সংক্রান্ত তথ্য...", "type": "standard" }
   ],
   "keywords": [
     {
@@ -99,18 +107,6 @@
       "exactMatch": false,
       "responseType": "operator",
       "text": "অনুগ্রহ করে অপেক্ষা করুন, একজন অপারেটর আপনার সাথে যুক্ত হবেন।"
-    },
-    {
-      "trigger": "ডিপোজিট",
-      "exactMatch": false,
-      "responseType": "menu",
-      "target": "deposit_info"
-    },
-    {
-      "trigger": "উত্তোলন",
-      "exactMatch": false,
-      "responseType": "menu",
-      "target": "withdraw_info"
     }
   ]
 }
