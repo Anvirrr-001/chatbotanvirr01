@@ -15,7 +15,8 @@ async function handleMessage(messageText, clientId, chatId) {
     try {
         const configPath = path.join(__dirname, 'config.json');
         if (fs.existsSync(configPath)) {
-            config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            const raw = fs.readFileSync(configPath, 'utf8');
+            config = JSON.parse(raw);
         }
     } catch (e) { console.error("Config Error:", e); }
 
@@ -28,6 +29,11 @@ async function handleMessage(messageText, clientId, chatId) {
             if (textLower.includes(trigger)) {
                 userSessions.delete(chatId);
                 if (kw.responseType === 'operator') return createOperatorResponse(kw.text);
+                if (kw.responseType === 'menu') {
+                    session.menuId = kw.target;
+                    userSessions.set(chatId, session);
+                    return renderMenu(kw.target, config);
+                }
                 return createBotResponse(kw.text);
             }
         }
@@ -97,5 +103,3 @@ function createOperatorResponse(text) {
 }
 
 module.exports = { handleMessage };
-
-

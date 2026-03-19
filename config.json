@@ -1,105 +1,90 @@
 {
   "botName": "ELON সাহায্যকারী",
   "botAvatar": "https://i.ibb.co/example",
-  "welcomeGreeting": "স্বাগতম, কাস্টমার সাপোর্ট আপনাকে শুভেচ্ছ জানাতে পেরে আনন্দিত। 👋",
+  "welcomeGreeting": "হ্যালো, কাস্টমার সাপোর্ট এ যোগাযোগ করার জন্য ধন্যবাদ 👋",
   "initialMenuId": "main_menu",
   "menus": [
     {
       "id": "main_menu",
       "text": "আপনার প্রশ্নের টপিক সিলেক্ট করুন।",
+      "type": "standard",
       "options": [
-        {
-          "text": "💰 পেমেন্ট",
-          "target": "payment_menu"
-        },
-        {
-          "text": "👨‍💻 Contact Operator",
-          "target": "operator_transfer"
-        }
-      ],
-
-      "type": "standard"
+        { "text": "👥 রেফারেল প্রোগ্রাম", "target": "referral_menu" },
+        { "text": "👑 ভিআইপি ক্লাব", "target": "vip_club_menu" },
+        { "text": "🎁 বোনাসগুলো", "target": "bonus_menu" },
+        { "text": "💰 পেমেন্ট", "target": "payment_menu" },
+        { "text": "🥷 এখন আপনি সরাসরি টেলিগ্রামে ELONBET", "target": "telegram_info" },
+        { "text": "👨‍💻 Contact Operator", "target": "operator_transfer" }
+      ]
     },
     {
       "id": "payment_menu",
-      "text": "ডিপোজিট না উত্তোলন?",
+      "text": "ডিপোজিট নিয়ে আপনার প্রশ্নটি উল্লেখ করুন।",
+      "type": "standard",
       "options": [
-        {
-          "text": "ডিপোজিট তথ্য",
-          "target": "deposit_info_menu"
-        },
-        {
-          "text": "উত্তোলন তথ্য",
-          "target": "withdraw_info_menu"
-        },
-        {
-          "text": "⬅ মেনুতে ফিরে যান",
-          "target": "main_menu"
-        }
+        { "text": "ডিপোজিট জমা হয় নি", "target": "payment_followup" },
+        { "text": "দীর্ঘ উত্তোলন", "target": "payment_followup" },
+        { "text": "ডিপোজিট তথ্য", "target": "deposit_info" },
+        { "text": "উত্তোলন তথ্য", "target": "withdraw_info" },
+        { "text": "← মেনুতে ফিরে যান", "target": "main_menu" }
       ]
     },
     {
-      "id": "deposit_info_menu",
-      "text": "ডিপোজিট সম্পর্কে বিস্তারিত জানুন:",
+      "id": "payment_followup",
+      "text": "দয়া করে আপনি যে পেমেন্ট পদ্ধতিটি ব্যবহার করেছেন তা নির্বাচন করুন। এটি আমাদেরকে আপনার পেমেন্টটি দ্রুত অনুসরণ করতে সাহায্য করে 👇",
+      "type": "standard",
       "options": [
-        {
-          "text": "কিভাবে ডিপোজিট করবো?",
-          "target": "how_to_deposit"
-        },
-        {
-          "text": "ডিপোজিট জমা হয় নি",
-          "target": "operator_transfer"
-        },
-        {
-          "text": "⬅ ফিরে যান",
-          "target": "payment_menu"
-        }
+        { "text": "Bkash FAST", "target": "operator_transfer" },
+        { "text": "Nagad FAST", "target": "operator_transfer" },
+        { "text": "Bkash Nagad Rocket Upay", "target": "operator_transfer" }
       ]
     },
     {
-      "id": "how_to_deposit",
-      "text": "ডিপোজিট করতে 'Deposit' বাটনে ক্লিক করুন এবং নিয়ম অনুসরণ করুন।",
+      "id": "deposit_info",
+      "text": "ডিপোজিট করার জন্য 'Deposit' বাটনে ক্লিক করুন এবং আপনার পছন্দের পেমেন্ট মেথড (Bkash, Nagad, etc.) সিলেক্ট করে নিয়ম অনুসরণ করুন।",
+      "type": "standard",
       "options": [
-        {
-          "text": "ধন্যবাদ",
-          "target": "main_menu"
-        },
-        {
-          "text": "⬅ ফিরে যান",
-          "target": "deposit_info_menu"
-        }
+        { "text": "← ফিরে যান", "target": "payment_menu" }
       ]
     },
     {
-      "id": "withdraw_info_menu",
-      "text": "উত্তোলন সম্পর্কে বিস্তারিত জানুন:",
+      "id": "withdraw_info",
+      "text": "উত্তোলন করার জন্য 'Withdraw' বাটনে ক্লিক করুন এবং আপনার ওয়ালেট নম্বর দিয়ে উত্তোলন রিকোয়েস্ট সাবমিট করুন।",
+      "type": "standard",
       "options": [
-        {
-          "text": "কিভাবে উত্তোলন করবো?",
-          "target": "how_to_withdraw"
-        },
-        {
-          "text": "টাকা পাই নি",
-          "target": "operator_transfer"
-        },
-        {
-          "text": "⬅ ফিরে যান",
-          "target": "payment_menu"
-        }
+        { "text": "← ফিরে যান", "target": "payment_menu" }
       ]
     },
     {
-      "id": "how_to_withdraw",
-      "text": "উত্তোলন করতে 'Withdraw' বাটনে ক্লিক করুন এবং আপনার ওয়ালেট নম্বর দিন।",
+      "id": "referral_menu",
+      "text": "আমাদের রেফারেল প্রোগ্রাম সম্পর্কে বিস্তারিত জানতে আপনার একাউন্টের 'Referral' সেকশনে ভিজিট করুন।",
+      "type": "standard",
       "options": [
-        {
-          "text": "ধন্যবাদ",
-          "target": "main_menu"
-        },
-        {
-          "text": "⬅ ফিরে যান",
-          "target": "withdraw_info_menu"
-        }
+        { "text": "← মেনুতে ফিরে যান", "target": "main_menu" }
+      ]
+    },
+    {
+      "id": "vip_club_menu",
+      "text": "ELONBET ভিআইপি ক্লাব মেম্বারশিপের জন্য নিয়মিত গেম খেলুন এবং লেভেল আপ করে বিশেষ সুবিধা উপভোগ করুন।",
+      "type": "standard",
+      "options": [
+        { "text": "← মেনুতে ফিরে যান", "target": "main_menu" }
+      ]
+    },
+    {
+      "id": "bonus_menu",
+      "text": "বর্তমানে আমাদের অনেক আকর্ষণীয় বোনাস অফার চলছে। বিস্তারিত জানতে 'Promotions' পেজ চেক করুন।",
+      "type": "standard",
+      "options": [
+        { "text": "← মেনুতে ফিরে যান", "target": "main_menu" }
+      ]
+    },
+    {
+      "id": "telegram_info",
+      "text": "সরাসরি টেলিগ্রাম বটের মাধ্যমে সহায়তা পেতে এবং আপডেট থাকতে আমাদের টেলিগ্রাম চ্যানেলে যুক্ত হোন।",
+      "type": "standard",
+      "options": [
+        { "text": "← মেনুতে ফিরে যান", "target": "main_menu" }
       ]
     },
     {
@@ -114,6 +99,18 @@
       "exactMatch": false,
       "responseType": "operator",
       "text": "অনুগ্রহ করে অপেক্ষা করুন, একজন অপারেটর আপনার সাথে যুক্ত হবেন।"
+    },
+    {
+      "trigger": "ডিপোজিট",
+      "exactMatch": false,
+      "responseType": "menu",
+      "target": "deposit_info"
+    },
+    {
+      "trigger": "উত্তোলন",
+      "exactMatch": false,
+      "responseType": "menu",
+      "target": "withdraw_info"
     }
   ]
 }
