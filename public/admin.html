@@ -9,11 +9,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Hind Siliguri', sans-serif; background-color: #0f172a; color: #f8fafc; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .input-field { background: #1e293b; border: 1px solid #334155; color: #f8fafc; border-radius: 0.5rem; padding: 0.75rem; width: 100%; focus: border-blue-500; outline: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1a1a1a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #444; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); }
+        .input-field { width: 100%; background-color: #111827; border: 1px solid #1f2937; border-radius: 0.5rem; padding: 0.75rem 1rem; color: #fff; transition: all 0.2s; }
+        .input-field:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
         .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; transition: all 0.3s; }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
-        .card { background: #1e293b; border-radius: 1rem; padding: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .card { background-color: #111827; border: 1px solid #1f2937; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        .modal-backdrop { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 50; display: flex; align-items: center; justify-content: center; visibility: hidden; opacity: 0; transition: all 0.3s; }
+        .modal-backdrop.show { visibility: visible; opacity: 1; }
+        .modal-backdrop.show .card { transform: scale(1); opacity: 1; }
+        .toast { position: fixed; bottom: 2rem; right: 2rem; background-color: #059669; color: #fff; padding: 0.75rem 1.5rem; border-radius: 9999px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); z-index: 100; transform: translateY(5rem); transition: all 0.3s; opacity: 0; pointer-events: none; }
+        .toast.show { transform: translateY(0); opacity: 1; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -154,7 +164,20 @@
         </div>
     </template>
 
+    <!-- Modal: New Menu -->
+    <div id="new-menu-modal" class="modal-backdrop">
+        <div class="card w-full max-w-md mx-4 transform transition-all scale-95 opacity-0 duration-300" id="modal-content">
+            <h3 class="text-xl font-bold mb-4">Create New Menu/Step</h3>
+            <p class="text-gray-400 text-sm mb-6">Enter a unique ID for the new menu. This will be used to link buttons to this step.</p>
+            <input type="text" id="new-menu-id-input" class="input-field mb-6" placeholder="e.g. withdrawal_steps">
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-5 py-2 text-gray-400 hover:text-white transition-colors">Cancel</button>
+                <button onclick="confirmCreateMenu()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold transition-all">Create Menu</button>
+            </div>
+        </div>
+    </div>
 
-    <script src="admin.js"></script>
-</body>
-</html>
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <i class="fas fa-check-circle mr-2"></i> <span id="toast-message">Changes saved!</span>
+    </div>

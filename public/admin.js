@@ -116,13 +116,31 @@ function addOptionRow(opt = { text: '', target: '' }) {
 }
 
 function createNewMenu() {
-    const id = prompt("Enter a unique ID for the new menu/step (e.g. deposit_info):");
+    document.getElementById('new-menu-modal').classList.add('show');
+    document.getElementById('new-menu-id-input').value = '';
+    document.getElementById('new-menu-id-input').focus();
+}
+
+function closeModal() {
+    document.getElementById('new-menu-modal').classList.remove('show');
+}
+
+function confirmCreateMenu() {
+    const id = document.getElementById('new-menu-id-input').value.trim();
     if (!id) return;
     if (currentConfig.menus.find(m => m.id === id)) return alert("ID already exists!");
 
     const newMenu = { id: id, text: "New step text...", options: [], type: 'standard' };
     currentConfig.menus.push(newMenu);
+    closeModal();
     openMenu(id);
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-message').textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
 function deleteActiveMenu() {
@@ -177,7 +195,7 @@ async function saveConfig() {
         });
 
         if (response.ok) {
-            alert("Changes saved and live!");
+            showToast("Changes saved and live! ✅");
             renderSidebar();
         } else {
             const err = await response.json();
