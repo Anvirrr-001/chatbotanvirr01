@@ -43,7 +43,7 @@ app.post('/jivo-webhook', async (req, res) => {
 // Serve frontend static files
 app.use(express.static('public'));
 
-// API Endpoint for Web Chat Interface
+// API Endpoint for Admin Dashboard
 app.get('/api/config', (req, res) => {
     try {
         const configPath = path.join(__dirname, 'config.json');
@@ -55,15 +55,25 @@ app.get('/api/config', (req, res) => {
     }
 });
 
+app.post('/api/admin-login', (req, res) => {
+    const { password } = req.body;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+    
+    if (password === ADMIN_PASSWORD) {
+        res.status(200).json({ success: true });
+    } else {
+        res.status(401).json({ error: 'Invalid password' });
+    }
+});
+
 app.post('/api/config', (req, res) => {
     const { password, config } = req.body;
-    
-    // Simple authentication for the admin panel
     const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
     
     if (password !== ADMIN_PASSWORD) {
         return res.status(401).json({ error: 'Unauthorized. Invalid password.' });
     }
+
 
     try {
         const configPath = path.join(__dirname, 'config.json');

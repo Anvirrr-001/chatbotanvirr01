@@ -6,19 +6,29 @@ async function login() {
     if (!pass) return;
 
     try {
-        const response = await fetch('/api/config');
-        if (response.ok) {
-            currentConfig = await response.json();
-            adminPassword = pass;
-            
-            // Show dashboard
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-            
-            renderDashboard();
+        const loginRes = await fetch('/api/admin-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pass })
+        });
+
+        if (loginRes.ok) {
+            const configRes = await fetch('/api/config');
+            if (configRes.ok) {
+                currentConfig = await configRes.json();
+                adminPassword = pass;
+                
+                // Show dashboard
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                
+                renderDashboard();
+            }
+        } else {
+            document.getElementById('login-error').classList.remove('hidden');
         }
     } catch (e) {
-        alert("Server error connecting to config API");
+        alert("Server error connecting to API");
     }
 }
 
