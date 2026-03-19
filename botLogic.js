@@ -20,6 +20,12 @@ async function handleMessage(messageText, clientId, chatId) {
         }
     } catch (e) { console.error("Config Error:", e); }
 
+    // --- 0. PRIORITY RESET CHECK (Always reset on refresh or start) ---
+    if (['/start', 'hello', 'hi', 'menu', 'শুরু'].includes(textLower)) {
+        userSessions.delete(chatId);
+        return transitionToMenu(config.initialMenuId, chatId, config);
+    }
+
     let session = userSessions.get(chatId) || { menuId: config.initialMenuId };
 
     // --- 1. HANDLE DATA COLLECTION STATE ---
@@ -80,13 +86,9 @@ async function handleMessage(messageText, clientId, chatId) {
         }
     }
 
-    // --- 4. RESET LOGIC ---
-    if (['/start', 'hello', 'hi', 'menu', 'শুরু'].includes(textLower)) {
-        return transitionToMenu(config.initialMenuId, chatId, config);
-    }
-
-    // --- 5. FALLBACK ---
-    return renderMenu(session.menuId || config.initialMenuId, config);
+    // --- 5. FALLBACK / AUTOMATIC RESTART ---
+    // If no keyword or option matches, return to starting menu
+    return transitionToMenu(config.initialMenuId, chatId, config);
 }
 
 /**
