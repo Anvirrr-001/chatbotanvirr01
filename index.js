@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
 const { exec } = require('child_process');
-const { handleMessage } = require('./botLogic');
+const { handleMessage, loadConfig } = require('./botLogic');
 
 const app = express();
 app.use(cors());
@@ -86,6 +86,9 @@ app.post('/api/config', (req, res) => {
     try {
         const configPath = path.join(__dirname, 'config.json');
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
+        
+        // Refresh the bot's configuration cache
+        loadConfig();
         
         // --- GIT SYNC START ---
         // This ensures changes are permanent by pushing them back to GitHub repository.

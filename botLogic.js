@@ -15,6 +15,31 @@ setInterval(() => {
     }
 }, 60 * 60 * 1000); // Check every hour
 
+// In-Memory Configuration Cache
+let configCache = { menus: [], initialMenuId: "main_menu", keywords: [], welcomeGreeting: "" };
+
+/**
+ * Loads configuration from config.json into memory.
+ * Should be called on startup and whenever the config file is updated.
+ */
+function loadConfig() {
+    try {
+        const configPath = path.join(__dirname, 'config.json');
+        if (fs.existsSync(configPath)) {
+            const raw = fs.readFileSync(configPath, 'utf8');
+            configCache = JSON.parse(raw);
+            console.log("Configuration cache updated successfully.");
+            return true;
+        }
+    } catch (e) {
+        console.error("Config Loading Error:", e);
+    }
+    return false;
+}
+
+// Initial load
+loadConfig();
+
 /**
  * Handle incoming message from client
  */
@@ -22,15 +47,8 @@ async function handleMessage(messageText, clientId, chatId) {
     try {
         const textLower = messageText.toLowerCase().trim();
 
-        // Load Config
-        let config = { menus: [], initialMenuId: "main_menu", keywords: [] };
-        try {
-            const configPath = path.join(__dirname, 'config.json');
-            if (fs.existsSync(configPath)) {
-                const raw = fs.readFileSync(configPath, 'utf8');
-                config = JSON.parse(raw);
-            }
-        } catch (e) { console.error("Config Error:", e); }
+        // Use the cached configuration
+        const config = configCache;
 
         // --- 0. PRIORITY RESET CHECK (Always reset on restart command) ---
         if (['/start', 'hello', 'hi', 'menu', 'শুরু'].includes(textLower)) {
@@ -202,9 +220,9 @@ function createBotResponse(text) {
 
 function createOperatorResponse(text) {
     return {
-        "event": "bot_message",
+        "event": "operator_transfer",
         "messages": [{ "type": "text", "text": text || "আমি আপনার চ্যাট টি অপারেটর এর কাছে ট্রান্সফার করতেছি।" }]
     };
 }
 
-module.exports = { handleMessage };
+module.exports = { handleMessage, loadConfig };
