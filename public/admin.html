@@ -23,6 +23,8 @@
         .modal-backdrop.show { visibility: visible; opacity: 1; }
         .toast { position: fixed; bottom: 2rem; right: 2rem; background-color: #059669; color: #fff; padding: 0.75rem 1.5rem; border-radius: 9999px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 100; transform: translateY(5rem); transition: all 0.3s; opacity: 0; pointer-events: none; }
         .toast.show { transform: translateY(0); opacity: 1; }
+        .tab-btn { padding: 0.75rem 1.5rem; font-weight: 600; border-radius: 0.5rem; transition: all 0.2s; color: #94a3b8; }
+        .tab-btn.active { background-color: #1e293b; color: #3b82f6; border: 1px solid #334155; }
     </style>
 </head>
 <body class="p-4 md:p-8 min-h-screen">
@@ -37,7 +39,6 @@
         
         <form onsubmit="submitAdminLogin(event)">
             <div class="mb-4">
-                <label class="block mb-2 text-xs font-bold uppercase text-gray-400 tracking-wider">Password</label>
                 <input type="password" id="admin-pass" class="input-field" placeholder="Enter admin password" required autocomplete="current-password">
             </div>
             <button type="submit" id="login-btn" class="w-full btn-primary mt-4 flex items-center justify-center gap-2">
@@ -48,24 +49,33 @@
         <p id="login-error" class="text-red-400 mt-4 text-sm text-center font-medium hidden"></p>
     </div>
 
-    <!-- Dashboard Section (Hidden by default) -->
+    <!-- Dashboard Section -->
     <div id="dashboard" class="max-w-6xl mx-auto hidden">
-        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-            <div>
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div class="flex items-center gap-4">
                 <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Bot Master</h1>
-                <p class="text-gray-400 mt-1">Advanced Flow Builder & Settings</p>
+                <div id="sync-badge" class="hidden px-3 py-1 bg-blue-900/30 text-blue-300 text-[10px] font-bold uppercase tracking-widest rounded-full border border-blue-800 animate-pulse">
+                    <i class="fas fa-sync-alt fa-spin mr-1"></i> Syncing to GitHub...
+                </div>
             </div>
             <div class="flex gap-4">
-                <button onclick="saveConfig()" class="btn-primary flex items-center gap-2">
-                    <i class="fas fa-save"></i> Save Changes
+                <button onclick="saveConfig()" id="global-save-btn" class="btn-primary flex items-center gap-2">
+                    <span id="save-btn-text"><i class="fas fa-save mr-1"></i> Save Changes</span>
+                    <i id="save-btn-spinner" class="fas fa-circle-notch fa-spin hidden"></i>
                 </button>
-                <button onclick="location.reload()" class="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg font-bold transition-all border border-gray-700">
-                    Logout
-                </button>
+                <button onclick="location.reload()" class="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-lg font-bold transition-all border border-gray-700">Logout</button>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <!-- Navigation Tabs -->
+        <div class="flex gap-2 mb-8 bg-gray-900/50 p-1 rounded-xl border border-gray-800 w-fit">
+            <button onclick="switchTab('flow')" id="tab-flow" class="tab-btn active"><i class="fas fa-project-diagram mr-2"></i> Flow Builder</button>
+            <button onclick="switchTab('keywords')" id="tab-keywords" class="tab-btn"><i class="fas fa-keyboard mr-2"></i> Keyword Triggers</button>
+            <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn"><i class="fas fa-cog mr-2"></i> Settings</button>
+        </div>
+
+        <!-- Tab Content: Flow Builder -->
+        <div id="content-flow" class="tab-content grid grid-cols-1 lg:grid-cols-4 gap-8">
             <div class="lg:col-span-1">
                 <div class="card h-full flex flex-col">
                     <div class="flex justify-between items-center mb-6">
@@ -79,20 +89,7 @@
             </div>
 
             <div class="lg:col-span-3 space-y-6">
-                <div class="card">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2">Bot Name</label>
-                            <input type="text" id="bot-name" class="input-field" placeholder="Chatbot Name">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2">Welcome Greeting</label>
-                            <input type="text" id="welcome-greeting" class="input-field" placeholder="Welcome message...">
-                        </div>
-                    </div>
-                </div>
-
-                <div id="menu-editor" class="card hidden border-t-4 border-blue-500">
+                <div id="menu-editor" class="card hidden border-t-4 border-blue-500 animate-in fade-in duration-300">
                     <div class="flex justify-between items-center mb-8">
                         <h2 class="text-xl font-bold flex items-center">
                             <i class="fas fa-edit mr-3 text-blue-400"></i> Editing: <span id="editing-menu-id" class="ml-2 text-blue-300"></span>
@@ -128,31 +125,21 @@
 
                         <div id="data-collection-fields" class="space-y-6 hidden">
                             <div class="p-4 bg-blue-900/20 border border-blue-800 rounded-xl">
-                                <h3 class="text-sm font-bold text-blue-300 mb-2 flex items-center">
-                                    <i class="fas fa-info-circle mr-2"></i> How it works
-                                </h3>
-                                <p class="text-xs text-blue-200/70 leading-relaxed">
-                                    The bot will ask each question in sequence. After collecting all answers, it will show the summary using the template below. Use <b>{field_name}</b> in the template to insert answers.
-                                </p>
+                                <p class="text-xs text-blue-200/70 leading-relaxed">The bot will ask each question in sequence. Use <b>{field_name}</b> in the summary template.</p>
                             </div>
-
                             <div class="space-y-4">
                                 <div class="flex justify-between items-center">
                                     <label class="block text-[10px] font-bold uppercase text-gray-500">Sequential Questions</label>
-                                    <button onclick="addStepRow()" class="text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/40 px-3 py-1.5 rounded-lg border border-purple-900 transition-all">
-                                        <i class="fas fa-plus mr-1"></i> Add Question
-                                    </button>
+                                    <button onclick="addStepRow()" class="text-xs text-purple-400 hover:text-purple-300"><i class="fas fa-plus mr-1"></i> Add Question</button>
                                 </div>
                                 <div id="steps-list" class="space-y-2"></div>
                             </div>
-
                             <div>
                                 <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2">Summary Template</label>
-                                <textarea id="summary-template" rows="4" class="input-field text-sm font-mono" placeholder="Summary text... use {field_name}"></textarea>
+                                <textarea id="summary-template" rows="4" class="input-field text-sm font-mono" placeholder="Summary text..."></textarea>
                             </div>
-
                             <div>
-                                <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2">Confirm Target (Where to go after Yes)</label>
+                                <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2">Confirm Target</label>
                                 <select id="confirm-target" class="input-field"></select>
                             </div>
                         </div>
@@ -160,9 +147,7 @@
                         <div id="options-section">
                             <div class="flex justify-between items-center mb-4">
                                 <label class="block text-[10px] font-bold uppercase text-gray-500">Interactive Buttons</label>
-                                <button onclick="addOptionRow()" class="text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 px-3 py-1.5 rounded-lg border border-blue-900 transition-all">
-                                    <i class="fas fa-plus mr-1"></i> Add Button
-                                </button>
+                                <button onclick="addOptionRow()" class="text-xs text-blue-400 hover:text-blue-300"><i class="fas fa-plus mr-1"></i> Add Button</button>
                             </div>
                             <div id="options-list" class="space-y-3"></div>
                         </div>
@@ -175,35 +160,89 @@
                 </div>
             </div>
         </div>
+
+        <!-- Tab Content: Keywords Editor -->
+        <div id="content-keywords" class="tab-content hidden animate-in slide-in-from-bottom-4 duration-300">
+            <div class="card">
+                <div class="flex justify-between items-center mb-8 border-b border-gray-800 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold">Keyword Triggers</h2>
+                        <p class="text-gray-500 text-xs mt-1">If user types these words, bot will trigger a specific action.</p>
+                    </div>
+                    <button onclick="addKeywordRow()" class="btn-primary flex items-center gap-2">
+                        <i class="fas fa-plus"></i> Add New Keyword
+                    </button>
+                </div>
+                <div id="keywords-container" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Settings -->
+        <div id="content-settings" class="tab-content hidden animate-in slide-in-from-bottom-4 duration-300">
+            <div class="card max-w-2xl mx-auto">
+                <h2 class="text-2xl font-bold mb-8 flex items-center gap-3">
+                    <i class="fas fa-sliders-h text-purple-400"></i> Global Settings
+                </h2>
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2 tracking-widest">Bot Identity Name</label>
+                        <input type="text" id="bot-name" class="input-field" placeholder="Chatbot Name">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-gray-500 mb-2 tracking-widest">First Welcome Message</label>
+                        <textarea id="welcome-greeting" rows="3" class="input-field" placeholder="Welcome message..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Templates & Overlays -->
+    <!-- Templates -->
     <template id="option-row-template">
-        <div class="flex flex-col md:flex-row gap-4 p-4 glass rounded-xl relative group hover:bg-white/[0.05] transition-all border border-transparent hover:border-blue-500/30">
-            <div class="flex-1">
-                <input type="text" class="opt-text input-field py-2 text-sm" placeholder="Button Label">
-            </div>
-            <div class="flex-1">
-                <select class="opt-target input-field py-2 text-sm"></select>
-            </div>
+        <div class="flex gap-4 p-4 glass rounded-xl relative group border border-transparent hover:border-blue-500/30">
+            <div class="flex-1"><input type="text" class="opt-text input-field py-2 text-sm" placeholder="Button Label"></div>
+            <div class="flex-1"><select class="opt-target input-field py-2 text-sm"></select></div>
             <button class="remove-option-btn text-gray-600 hover:text-red-500 p-2"><i class="fas fa-times"></i></button>
         </div>
     </template>
 
     <template id="step-row-template">
         <div class="flex gap-2 items-start p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
-            <div class="w-24">
-                <input type="text" class="step-field input-field py-1.5 text-xs font-mono" placeholder="field_id">
-            </div>
-            <div class="flex-1">
-                <input type="text" class="step-question input-field py-1.5 text-xs" placeholder="Question to ask...">
-            </div>
+            <div class="w-32"><input type="text" class="step-field input-field py-1.5 text-xs font-mono" placeholder="field_id"></div>
+            <div class="flex-1"><input type="text" class="step-question input-field py-1.5 text-xs" placeholder="Question to ask..."></div>
             <button class="remove-step-btn text-gray-500 hover:text-red-400 p-1.5"><i class="fas fa-trash-alt"></i></button>
         </div>
     </template>
 
+    <template id="keyword-row-template">
+        <div class="keyword-row p-6 bg-gray-900/40 border border-gray-800 rounded-2xl grid grid-cols-1 md:grid-cols-12 gap-6 relative group transition-all hover:border-blue-500/30 hover:bg-blue-900/5">
+            <div class="md:col-span-3">
+                <label class="block text-[9px] font-bold text-gray-600 uppercase mb-2">Trigger Keyword</label>
+                <input type="text" class="kw-trigger input-field font-medium border-gray-800" placeholder="e.g. deposit_issue">
+            </div>
+            <div class="md:col-span-3">
+                <label class="block text-[9px] font-bold text-gray-600 uppercase mb-2">Response Type</label>
+                <select class="kw-type input-field border-gray-800" onchange="toggleKeywordTypeUI(this)">
+                    <option value="text">Send Text Message</option>
+                    <option value="menu">Transition to Menu</option>
+                    <option value="operator">Transfer to Operator</option>
+                </select>
+            </div>
+            <div class="md:col-span-12 md:mt-2 target-container">
+                <label class="block text-[9px] font-bold text-gray-600 uppercase mb-2">Response Content / Target</label>
+                <div class="flex gap-4">
+                    <div class="flex-1 response-input-wrapper">
+                        <textarea class="kw-text input-field text-sm border-gray-800" rows="2" placeholder="Message content..."></textarea>
+                        <select class="kw-target input-field hidden border-gray-800"></select>
+                    </div>
+                </div>
+            </div>
+            <button class="remove-kw-btn absolute top-4 right-4 text-gray-700 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button>
+        </div>
+    </template>
+
     <div id="new-menu-modal" class="modal-backdrop">
-        <div class="card w-full max-w-sm mx-4 transform transition-all shadow-2xl">
+        <div class="card w-full max-w-sm mx-4 shadow-2xl">
             <h3 class="text-xl font-bold mb-2">New Step ID</h3>
             <p class="text-gray-500 text-xs mb-6">Enter a unique identifier (no spaces)</p>
             <input type="text" id="new-menu-id-input" class="input-field mb-6" placeholder="e.g. help_section">
@@ -219,81 +258,59 @@
     </div>
 
     <script>
-        let currentConfig = { menus: [], initialMenuId: "main_menu", botName: "", welcomeGreeting: "" };
+        let currentConfig = { menus: [], initialMenuId: "main_menu", botName: "", welcomeGreeting: "", keywords: [] };
         let adminPassword = '';
         let activeMenuId = null;
 
-        // Trace function to log both to console and optionally to a hidden UI element for debug
-        function dbg(msg) { console.log(`[DEBUG] ${msg}`); }
-
         async function submitAdminLogin(event) {
             if (event) event.preventDefault();
-            dbg("submitAdminLogin initiated");
-            
             const btn = document.getElementById('login-btn');
-            const btnText = document.getElementById('btn-text');
-            const spinner = document.getElementById('btn-spinner');
-            const errorMsg = document.getElementById('login-error');
-            const passInput = document.getElementById('admin-pass');
-            
-            const pass = passInput.value.trim();
+            const pass = document.getElementById('admin-pass').value.trim();
             if (!pass) return;
 
-            // UI State: Loading
             btn.disabled = true;
-            btnText.textContent = "Verifying...";
-            spinner.classList.remove('hidden');
-            errorMsg.classList.add('hidden');
+            document.getElementById('btn-spinner').classList.remove('hidden');
 
             try {
-                dbg(`Attempting POST /api/admin-login...`);
                 const response = await fetch('/api/admin-login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ password: pass })
                 });
 
-                dbg(`Response status: ${response.status}`);
-
                 if (response.ok) {
-                    dbg("Login successful, loading config...");
                     const configRes = await fetch('/api/config');
-                    if (configRes.ok) {
-                        currentConfig = await configRes.json();
-                        adminPassword = pass;
-                        
-                        document.getElementById('login-screen').classList.add('hidden');
-                        document.getElementById('dashboard').classList.remove('hidden');
-                        renderDashboard();
-                        dbg("Dashboard ready.");
-                    } else {
-                        throw new Error("Failed to load config after login");
-                    }
+                    currentConfig = await configRes.json();
+                    if (!currentConfig.keywords) currentConfig.keywords = [];
+                    adminPassword = pass;
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
+                    renderDashboard();
                 } else {
                     const data = await response.json();
-                    dbg(`Login failed: ${data.error}`);
-                    errorMsg.textContent = data.error || "Login unsuccessful";
-                    errorMsg.classList.remove('hidden');
+                    document.getElementById('login-error').textContent = data.error;
+                    document.getElementById('login-error').classList.remove('hidden');
                 }
-            } catch (err) {
-                dbg(`Network/Server error: ${err.message}`);
-                errorMsg.textContent = "Cannot reach server. Is it running?";
-                errorMsg.classList.remove('hidden');
-            } finally {
+            } catch (err) { alert("Server connection failed."); }
+            finally {
                 btn.disabled = false;
-                btnText.textContent = "Login to Dashboard";
-                spinner.classList.add('hidden');
+                document.getElementById('btn-spinner').classList.add('hidden');
             }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('active');
         }
 
         function renderDashboard() {
             document.getElementById('bot-name').value = currentConfig.botName || "";
             document.getElementById('welcome-greeting').value = currentConfig.welcomeGreeting || "";
             renderSidebar();
-            if (currentConfig.menus.length > 0 && !activeMenuId) {
-                // By default select the initial menu if exists
-                openMenu(currentConfig.initialMenuId || currentConfig.menus[0].id);
-            }
+            renderKeywords();
+            if (currentConfig.menus.length > 0 && !activeMenuId) openMenu(currentConfig.initialMenuId || currentConfig.menus[0].id);
         }
 
         function renderSidebar() {
@@ -304,7 +321,7 @@
                 const btn = document.createElement('button');
                 btn.className = `w-full text-left p-4 rounded-xl text-sm transition-all flex justify-between items-center group ${activeMenuId === m.id ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'}`;
                 btn.onclick = () => openMenu(m.id);
-                btn.innerHTML = `<span class="truncate font-medium">${m.id}</span> ${isInitial ? '<span class="text-[8px] font-bold bg-blue-500/30 text-blue-200 px-2 py-1 rounded tracking-tighter">START</span>' : ''}`;
+                btn.innerHTML = `<span class="truncate font-medium">${m.id}</span> ${isInitial ? '<span class="text-[8px] font-bold bg-blue-500/30 text-blue-200 px-2 py-1 rounded">START</span>' : ''}`;
                 list.appendChild(btn);
             });
         }
@@ -313,31 +330,23 @@
             activeMenuId = id;
             const menu = currentConfig.menus.find(m => m.id === id);
             if (!menu) return;
-
             document.getElementById('no-menu-selected').classList.add('hidden');
             document.getElementById('menu-editor').classList.remove('hidden');
             renderSidebar();
-
             document.getElementById('editing-menu-id').textContent = menu.id;
             document.getElementById('menu-type').value = menu.type || 'standard';
             document.getElementById('menu-text-content').value = menu.text || '';
             document.getElementById('is-initial-menu').checked = (id === currentConfig.initialMenuId);
-            
-            // Load Data Collection specific fields
             document.getElementById('summary-template').value = menu.summaryTemplate || '';
             renderSteps(menu.steps || []);
             
-            // Populate Confirm Target dropdown
             const confirmSelect = document.getElementById('confirm-target');
             confirmSelect.innerHTML = '<option value="">(Select Target)</option>';
             currentConfig.menus.forEach(m => {
-                const o = document.createElement('option');
-                o.value = m.id;
-                o.textContent = m.id;
+                const o = document.createElement('option'); o.value = m.id; o.textContent = m.id;
                 if (m.id === menu.confirmationTarget) o.selected = true;
                 confirmSelect.appendChild(o);
             });
-
             toggleMenuTypeUI();
             renderOptions(menu.options || []);
         }
@@ -359,69 +368,94 @@
             const container = document.getElementById('steps-list');
             container.innerHTML = '';
             steps.forEach(s => addStepRow(s));
-            if (steps.length === 0) addStepRow(); // At least one empty row
+            if (steps.length === 0) addStepRow();
         }
 
         function addOptionRow(opt = { text: '', target: '' }) {
-            const template = document.getElementById('option-row-template');
-            const clone = template.content.cloneNode(true);
+            const clone = document.getElementById('option-row-template').content.cloneNode(true);
             const row = clone.querySelector('div');
-            
             row.querySelector('.opt-text').value = opt.text;
             const select = row.querySelector('.opt-target');
             select.innerHTML = '<option value="">(Select Target)</option>';
-            
             currentConfig.menus.forEach(m => {
-                const o = document.createElement('option');
-                o.value = m.id;
-                o.textContent = m.id;
+                const o = document.createElement('option'); o.value = m.id; o.textContent = m.id;
                 if (m.id === opt.target) o.selected = true;
                 select.appendChild(o);
             });
-
             row.querySelector('.remove-option-btn').onclick = () => row.remove();
             document.getElementById('options-list').appendChild(row);
         }
 
         function addStepRow(step = { field: '', question: '' }) {
-            const template = document.getElementById('step-row-template');
-            const clone = template.content.cloneNode(true);
+            const clone = document.getElementById('step-row-template').content.cloneNode(true);
             const row = clone.querySelector('div');
-            
             row.querySelector('.step-field').value = step.field;
             row.querySelector('.step-question').value = step.question;
-
             row.querySelector('.remove-step-btn').onclick = () => row.remove();
             document.getElementById('steps-list').appendChild(row);
         }
 
-        function createNewMenu() {
-            document.getElementById('new-menu-modal').classList.add('show');
-            const input = document.getElementById('new-menu-id-input');
-            input.value = '';
-            input.focus();
+        // --- Keywords Logic ---
+        function renderKeywords() {
+            const container = document.getElementById('keywords-container');
+            container.innerHTML = '';
+            currentConfig.keywords.forEach(kw => addKeywordRow(kw));
         }
 
-        function closeModal() { document.getElementById('new-menu-modal').classList.remove('show'); }
+        function addKeywordRow(kw = { trigger: '', responseType: 'text', text: '', target: '' }) {
+            const clone = document.getElementById('keyword-row-template').content.cloneNode(true);
+            const row = clone.querySelector('div');
+            row.querySelector('.kw-trigger').value = kw.trigger;
+            row.querySelector('.kw-type').value = kw.responseType || 'text';
+            row.querySelector('.kw-text').value = kw.text || '';
+            
+            const targetSel = row.querySelector('.kw-target');
+            targetSel.innerHTML = '<option value="">(Select Menu)</option>';
+            currentConfig.menus.forEach(m => {
+                const o = document.createElement('option'); o.value = m.id; o.textContent = m.id;
+                if (m.id === kw.target) o.selected = true;
+                targetSel.appendChild(o);
+            });
 
+            row.querySelector('.remove-kw-btn').onclick = () => row.remove();
+            toggleKeywordTypeUI(row.querySelector('.kw-type'));
+            document.getElementById('keywords-container').appendChild(row);
+        }
+
+        function toggleKeywordTypeUI(sel) {
+            const row = sel.closest('.keyword-row');
+            const type = sel.value;
+            row.querySelector('.kw-text').classList.toggle('hidden', type === 'menu' || type === 'operator');
+            row.querySelector('.kw-target').classList.toggle('hidden', type !== 'menu');
+            row.querySelector('.target-container').style.display = (type === 'operator') ? 'none' : 'block';
+        }
+
+        function createNewMenu() {
+            document.getElementById('new-menu-modal').classList.add('show');
+            document.getElementById('new-menu-id-input').value = '';
+            document.getElementById('new-menu-id-input').focus();
+        }
+        function closeModal() { document.getElementById('new-menu-modal').classList.remove('show'); }
         function confirmCreateMenu() {
             const id = document.getElementById('new-menu-id-input').value.trim().replace(/\s+/g, '_');
-            if (!id) return;
-            if (currentConfig.menus.some(m => m.id === id)) return alert("ID already exists!");
-            
-            currentConfig.menus.push({ id, text: "Welcome to this step...", options: [], type: 'standard' });
+            if (!id || currentConfig.menus.some(m => m.id === id)) return alert("Invalid or existing ID");
+            currentConfig.menus.push({ id, text: "New Step Text", options: [], type: 'standard' });
             closeModal();
             openMenu(id);
         }
 
         async function saveConfig() {
-            const btn = document.querySelector('button[onclick="saveConfig()"]');
-            btn.disabled = true;
+            const saveBtn = document.getElementById('global-save-btn');
+            const syncBadge = document.getElementById('sync-badge');
+            saveBtn.disabled = true;
+            document.getElementById('save-btn-spinner').classList.remove('hidden');
+            syncBadge.classList.remove('hidden');
 
-            // Update current config object from UI
+            // Collect identity info
             currentConfig.botName = document.getElementById('bot-name').value;
             currentConfig.welcomeGreeting = document.getElementById('welcome-greeting').value;
 
+            // Collect active menu info if open
             if (activeMenuId) {
                 const m = currentConfig.menus.find(x => x.id === activeMenuId);
                 if (m) {
@@ -430,23 +464,28 @@
                     if (document.getElementById('is-initial-menu').checked) currentConfig.initialMenuId = activeMenuId;
                     
                     if (m.type === 'standard') {
-                        const rows = document.querySelectorAll('#options-list > div');
-                        m.options = Array.from(rows).map(r => ({
+                        m.options = Array.from(document.querySelectorAll('#options-list > div')).map(r => ({
                             text: r.querySelector('.opt-text').value,
                             target: r.querySelector('.opt-target').value
                         })).filter(o => o.text);
                     } else if (m.type === 'data_collection') {
-                        const sRows = document.querySelectorAll('#steps-list > div');
-                        m.steps = Array.from(sRows).map(r => ({
+                        m.steps = Array.from(document.querySelectorAll('#steps-list > div')).map(r => ({
                             field: r.querySelector('.step-field').value.trim(),
                             question: r.querySelector('.step-question').value.trim()
                         })).filter(s => s.field && s.question);
                         m.summaryTemplate = document.getElementById('summary-template').value;
                         m.confirmationTarget = document.getElementById('confirm-target').value;
-                        m.options = [];
-                    } else m.options = [];
+                    }
                 }
             }
+
+            // Collect keywords info
+            currentConfig.keywords = Array.from(document.querySelectorAll('.keyword-row')).map(r => ({
+                trigger: r.querySelector('.kw-trigger').value.trim(),
+                responseType: r.querySelector('.kw-type').value,
+                text: r.querySelector('.kw-text').value.trim(),
+                target: r.querySelector('.kw-target').value
+            })).filter(k => k.trigger);
 
             try {
                 const response = await fetch('/api/config', {
@@ -455,13 +494,18 @@
                     body: JSON.stringify({ password: adminPassword, config: currentConfig })
                 });
                 if (response.ok) {
-                    showToast("Config saved successfully!");
+                    showToast("Changes saved & synced to GitHub!");
                     renderSidebar();
                 } else {
                     const data = await response.json();
-                    alert("Error saving: " + data.error);
+                    alert("Error: " + data.error);
                 }
-            } catch (err) { alert("Network error saving config."); }
+            } catch (err) { alert("Network error."); }
+            finally {
+                saveBtn.disabled = false;
+                document.getElementById('save-btn-spinner').classList.add('hidden');
+                syncBadge.classList.add('hidden');
+            }
         }
 
         function showToast(msg) {
@@ -472,9 +516,7 @@
         }
 
         function deleteActiveMenu() {
-            if (!activeMenuId) return;
-            if (activeMenuId === currentConfig.initialMenuId) return alert("Cannot delete entry point.");
-            if (!confirm(`Permanently delete ${activeMenuId}?`)) return;
+            if (!activeMenuId || activeMenuId === currentConfig.initialMenuId || !confirm(`Delete ${activeMenuId}?`)) return;
             currentConfig.menus = currentConfig.menus.filter(m => m.id !== activeMenuId);
             activeMenuId = null;
             document.getElementById('menu-editor').classList.add('hidden');
@@ -482,14 +524,11 @@
             renderSidebar();
         }
 
-        // Periodic Ping to check server status
         async function checkStatus() {
             try {
                 const res = await fetch('/api/config');
-                if (res.ok) {
-                    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-green-500";
-                    document.getElementById('status-text').textContent = "Server Online";
-                }
+                document.getElementById('status-dot').className = `w-2 h-2 rounded-full ${res.ok ? 'bg-green-500' : 'bg-red-500'}`;
+                document.getElementById('status-text').textContent = res.ok ? "Server Online" : "Server Offline";
             } catch (e) {
                 document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-red-500";
                 document.getElementById('status-text').textContent = "Server Offline";
@@ -497,8 +536,6 @@
         }
         setInterval(checkStatus, 5000);
         checkStatus();
-
-        dbg("Admin Dashboard Loaded - Single File Mode");
     </script>
 </body>
 </html>

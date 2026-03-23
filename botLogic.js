@@ -4,91 +4,119 @@ const path = require('path');
 // In-Memory Session Storage
 const userSessions = new Map();
 
+// Session Cleanup Logic: Remove sessions older than 24 hours to prevent memory leaks
+setInterval(() => {
+    const now = Date.now();
+    const expiry = 24 * 60 * 60 * 1000; // 24 hours
+    for (const [id, session] of userSessions.entries()) {
+        if (session.lastSeen && (now - session.lastSeen > expiry)) {
+            userSessions.delete(id);
+        }
+    }
+}, 60 * 60 * 1000); // Check every hour
+
 /**
  * Handle incoming message from client
  */
 async function handleMessage(messageText, clientId, chatId) {
-    const textLower = messageText.toLowerCase().trim();
-
-    // Load Config
-    let config = { menus: [], initialMenuId: "main_menu", keywords: [] };
     try {
-        const configPath = path.join(__dirname, 'config.json');
-        if (fs.existsSync(configPath)) {
-            const raw = fs.readFileSync(configPath, 'utf8');
-            config = JSON.parse(raw);
+        const textLower = messageText.toLowerCase().trim();
+
+        // Load Config
+        let config = { menus: [], initialMenuId: "main_menu", keywords: [] };
+        try {
+            const configPath = path.join(__dirname, 'config.json');
+            if (fs.existsSync(configPath)) {
+                const raw = fs.readFileSync(configPath, 'utf8');
+                config = JSON.parse(raw);
+            }
+        } catch (e) { console.error("Config Error:", e); }
+
+        // --- 0. PRIORITY RESET CHECK (Always reset on restart command) ---
+        if (['/start', 'hello', 'hi', 'menu', 'শুরু'].includes(textLower)) {
+            userSessions.delete(chatId);
+            return transitionToMenu(config.initialMenuId, chatId, config);
         }
-    } catch (e) { console.error("Config Error:", e); }
 
-    // --- 0. PRIORITY RESET CHECK (Always reset on refresh or start) ---
-    if (['/start', 'hello', 'hi', 'menu', 'শুরু'].includes(textLower)) {
-        userSessions.delete(chatId);
-        return transitionToMenu(config.initialMenuId, chatId, config);
-    }
+        let session = userSessions.get(chatId) || { menuId: config.initialMenuId };
+        session.lastSeen = Date.now();
 
-    let session = userSessions.get(chatId) || { menuId: config.initialMenuId };
-
-    // --- 1. HANDLE DATA COLLECTION STATE ---
-    if (session.collectingData) {
-        const menu = config.menus.find(m => m.id === session.menuId);
-        
-        // Handle "Summary Confirmation" step
-        if (session.stepIndex >= menu.steps.length) {
-            if (textLower === 'হ্যাঁ, সব ঠিক আছে') {
+        // --- 1. HANDLE DATA COLLECTION STATE ---
+        if (session.collectingData) {
+            const menu = config.menus.find(m => m.id === session.menuId);
+            if (!menu || !menu.steps) {
+                // Rescue: If menu is missing or broken, reset
                 session.collectingData = false;
-                userSessions.set(chatId, session);
-                return renderMenu(menu.confirmationTarget || 'operator_transfer', config);
-            } else if (textLower === 'না, কিছু একটা ভুল' || textLower === 'না') {
-                // Restart steps
-                session.stepIndex = 0;
-                session.data = {};
-                userSessions.set(chatId, session);
-                return renderDataCollectionStep(menu, session);
+                return transitionToMenu(config.initialMenuId, chatId, config);
             }
-            // If they type something else, just show the summary again
-            return renderDataCollectionSummary(menu, session);
-        }
-
-        // Store Answer and Advance
-        const currentStep = menu.steps[session.stepIndex];
-        session.data[currentStep.field] = messageText; // Keep original case for data
-        session.stepIndex++;
-        userSessions.set(chatId, session);
-
-        if (session.stepIndex < menu.steps.length) {
-            return renderDataCollectionStep(menu, session);
-        } else {
-            return renderDataCollectionSummary(menu, session);
-        }
-    }
-
-    // --- 2. HANDLE KEYWORD MATCHING ---
-    if (config.keywords) {
-        for (const kw of config.keywords) {
-            const trigger = kw.trigger.toLowerCase().trim();
-            if (textLower.includes(trigger)) {
-                userSessions.delete(chatId);
-                if (kw.responseType === 'operator') return createOperatorResponse(kw.text);
-                if (kw.responseType === 'menu') {
-                    return transitionToMenu(kw.target, chatId, config);
+            
+            // Handle "Summary Confirmation" step
+            if (session.stepIndex >= menu.steps.length) {
+                if (textLower === 'হ্যাঁ, সব ঠিক আছে' || textLower === 'হ্যাঁ') {
+                    session.collectingData = false;
+                    userSessions.set(chatId, session);
+                    return renderMenu(menu.confirmationTarget || 'operator_transfer', config);
+                } else if (textLower === 'না, কিছু একটা ভুল' || textLower === 'না') {
+                    // Restart steps
+                    session.stepIndex = 0;
+                    session.data = {};
+                    userSessions.set(chatId, session);
+                    return renderDataCollectionStep(menu, session);
                 }
-                return createBotResponse(kw.text);
+                // If they type something else, just show the summary again
+                return renderDataCollectionSummary(menu, session);
+            }
+
+            // Store Answer and Advance
+            const currentStep = menu.steps[session.stepIndex];
+            session.data[currentStep.field] = messageText; // Keep original case for data
+            session.stepIndex++;
+            userSessions.set(chatId, session);
+
+            if (session.stepIndex < menu.steps.length) {
+                return renderDataCollectionStep(menu, session);
+            } else {
+                return renderDataCollectionSummary(menu, session);
             }
         }
-    }
 
-    // --- 3. HANDLE MENU OPTIONS ---
-    const currentMenu = config.menus.find(m => m.id === (session.menuId || config.initialMenuId));
-    if (currentMenu && currentMenu.options) {
-        const option = currentMenu.options.find(opt => opt.text.toLowerCase() === textLower);
-        if (option) {
-            return transitionToMenu(option.target, chatId, config);
+        // --- 2. HANDLE KEYWORD MATCHING ---
+        if (config.keywords) {
+            for (const kw of config.keywords) {
+                if (!kw.trigger) continue; // Skip malformed keywords
+                const trigger = kw.trigger.toLowerCase().trim();
+                if (textLower.includes(trigger)) {
+                    userSessions.delete(chatId);
+                    if (kw.responseType === 'operator') return createOperatorResponse(kw.text);
+                    if (kw.responseType === 'menu') {
+                        return transitionToMenu(kw.target, chatId, config);
+                    }
+                    return createBotResponse(kw.text);
+                }
+            }
         }
-    }
 
-    // --- 5. FALLBACK / AUTOMATIC RESTART ---
-    // If no keyword or option matches, return to starting menu
-    return transitionToMenu(config.initialMenuId, chatId, config);
+        // --- 3. HANDLE MENU OPTIONS ---
+        const currentMenu = config.menus.find(m => m.id === (session.menuId || config.initialMenuId));
+        if (currentMenu && currentMenu.options) {
+            const option = currentMenu.options.find(opt => opt.text.toLowerCase() === textLower);
+            if (option) {
+                return transitionToMenu(option.target, chatId, config);
+            }
+        }
+
+        // --- 5. FALLBACK / AUTOMATIC RESTART ---
+        // If no keyword or option matches, return to starting menu
+        return transitionToMenu(config.initialMenuId, chatId, config);
+
+    } catch (globalError) {
+        console.error("CRITICAL BOT ERROR:", globalError);
+        // Fallback response so the user isn't stuck with a silent bot
+        return {
+            "messages": [{ "type": "text", "text": "দুঃখিত, আমি এই মুহূর্তে কিছুটা সমস্যায় পড়েছি। দয়া করে একটু পরে চেষ্টা করুন বা সরাসরি অপারেটরের সহায়তা নিন।" }],
+            "keyboard": [{ "text": "আবার শুরু করুন" }]
+        };
+    }
 }
 
 /**
@@ -98,11 +126,9 @@ function transitionToMenu(menuId, chatId, config) {
     const menu = config.menus.find(m => m.id === menuId);
     if (!menu) return renderMenu(config.initialMenuId, config);
 
-    const session = { menuId: menuId };
+    const session = { menuId: menuId, lastSeen: Date.now() };
     
     if (menu.type === 'data_collection' && menu.steps && menu.steps.length > 0) {
-        // Only auto-start if there's no intro text/options, or if explicitly triggered
-        // But for simplicity, we'll start it if it has steps.
         session.collectingData = true;
         session.stepIndex = 0;
         session.data = {};
@@ -119,7 +145,12 @@ function transitionToMenu(menuId, chatId, config) {
  */
 function renderMenu(menuId, config) {
     const menu = config.menus.find(m => m.id === menuId);
-    if (!menu) return renderMenu(config.initialMenuId, config);
+    if (!menu) {
+        // Fallback to start if target menu is missing
+        const startMenu = config.menus.find(m => m.id === config.initialMenuId);
+        if (!startMenu) return createBotResponse("Error: Bot not configured correctly.");
+        return renderMenu(config.initialMenuId, config);
+    }
 
     if (menu.type === 'operator') {
         return createOperatorResponse(menu.text);
@@ -129,7 +160,7 @@ function renderMenu(menuId, config) {
     if (menuId === config.initialMenuId && config.welcomeGreeting) {
         messages.push({ "type": "text", "text": config.welcomeGreeting });
     }
-    messages.push({ "type": "text", "text": menu.text });
+    messages.push({ "type": "text", "text": menu.text || "আপনার প্রশ্নের টপিক সিলেক্ট করুন।" });
 
     const response = { "messages": messages };
     if (menu.options && menu.options.length > 0) {

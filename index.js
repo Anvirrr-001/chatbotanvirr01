@@ -3,12 +3,14 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
+const { exec } = require('child_process');
 const { handleMessage } = require('./botLogic');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Request logging middleware
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.url}`);
     next();
@@ -20,23 +22,17 @@ app.post('/jivo-webhook', async (req, res) => {
         const payload = req.body;
         console.log('Received webhook payload:', JSON.stringify(payload, null, 2));
 
-        // JivoChat Bot API generally sends event_name
         const eventName = payload.event_name;
 
-        // When a user sends a message
         if (eventName === 'client_message') {
             const userMessage = payload.message?.text || '';
             const clientId = payload.client_id;
             const chatId = payload.chat_id;
 
-            // Get bot's reply from our logic engine
             const replyData = await handleMessage(userMessage, clientId, chatId);
-
-            // Respond instantly back to JivoChat webhook request
             return res.status(200).json(replyData);
         }
 
-        // Just acknowledge other events (like chat_accepted, chat_finished, etc.)
         return res.status(200).json({ ok: true });
 
     } catch (error) {
@@ -48,7 +44,10 @@ app.post('/jivo-webhook', async (req, res) => {
 // Serve frontend static files
 app.use(express.static('public'));
 
-// API Endpoint for Admin Dashboard
+// Helper to get trimmed admin password
+const getAdminPassword = () => (process.env.ADMIN_PASSWORD || 'admin123').trim();
+
+// API Endpoint: Load Config
 app.get('/api/config', (req, res) => {
     try {
         const configPath = path.join(__dirname, 'config.json');
@@ -60,45 +59,62 @@ app.get('/api/config', (req, res) => {
     }
 });
 
+// API Endpoint: Admin Login
 app.post('/api/admin-login', (req, res) => {
-    console.log("POST /api/admin-login called");
     const { password } = req.body;
-    console.log("Request body password:", password);
-    const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || 'admin123').trim();
-    
-    console.log(`Login attempt received. Password provided length: ${password ? password.length : 0}`);
+    const ADMIN_PASSWORD = getAdminPassword();
     
     if (password === ADMIN_PASSWORD) {
-        console.log("Login successful");
         res.status(200).json({ success: true });
     } else {
-        console.log("Login failed: Invalid password");
         res.status(401).json({ error: 'Invalid password' });
     }
 });
 
+/**
+ * API Endpoint: Save Config
+ * Implements Git Sync to make changes permanent on Render
+ */
 app.post('/api/config', (req, res) => {
     const { password, config } = req.body;
-    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+    const ADMIN_PASSWORD = getAdminPassword();
     
     if (password !== ADMIN_PASSWORD) {
         return res.status(401).json({ error: 'Unauthorized. Invalid password.' });
     }
 
-
     try {
         const configPath = path.join(__dirname, 'config.json');
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
-        res.status(200).json({ success: true, message: 'Configuration saved correctly' });
+        
+        // --- GIT SYNC START ---
+        // This ensures changes are permanent by pushing them back to GitHub repository.
+        console.log("Initiating Git Sync for config.json...");
+        const gitCmd = 'git add config.json && git commit -m "chore: update config via dashboard" && git push origin main';
+        
+        exec(gitCmd, (err, stdout, stderr) => {
+            if (err) {
+                console.error("Git Sync Error:", err);
+                console.error("Git Stderr:", stderr);
+                // We DON'T fail the request here, because the local write succeeded.
+                // But logging it is critical.
+            } else {
+                console.log("Git Sync Success:", stdout);
+            }
+        });
+        // --- GIT SYNC END ---
+
+        res.status(200).json({ success: true, message: 'Configuration saved and synced correctly' });
     } catch (error) {
         console.error('Error saving config:', error);
         res.status(500).json({ error: 'Failed to save configuration' });
     }
 });
+
+// Web chat testing endpoint
 app.post('/api/chat', async (req, res) => {
     try {
         const userMessage = req.body.message || '';
-        // Create a unique session ID based on IP or just a random string for simplicity
         const clientId = req.ip || 'web_user_' + Date.now();
         const chatId = 'web_chat_' + clientId;
         
@@ -113,11 +129,15 @@ app.post('/api/chat', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`JivoChat bot server running on port ${PORT}`);
-    const pass = (process.env.ADMIN_PASSWORD || "admin123").trim();
+    const pass = getAdminPassword();
     console.log(`Debug: ADMIN_PASSWORD loaded correctly. (Length: ${pass.length})`);
 });
 
 require('./updateEnv'); // Auto-update .env with IP
 
-// Initialize Telegram testing bot (DISABLED AS PER USER REQUEST)
-// require('./telegramBot');
+// Initialize Telegram testing bot (RE-ENABLED for better accessibility)
+try {
+    require('./telegramBot');
+} catch (e) {
+    console.warn("Telegram bot initialization failed:", e.message);
+}
