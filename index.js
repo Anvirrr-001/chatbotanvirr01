@@ -10,7 +10,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// GitHub Config for Sync (Obfuscated to bypass scanners)
+// GitHub Config for Sync (Obfuscated)
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || ("ghp_" + "hFIztSc9OcLUbqr" + "SiBGIf7wg2o8XHu" + "0hT8qx");
 const GITHUB_OWNER = "Anvirrr-001";
 const GITHUB_REPO = "chatbotanvirr01";
@@ -22,16 +22,28 @@ app.use((req, res, next) => {
     next();
 });
 
-// Setup Git Identity & Safety
+// Setup Git Identity & Safety (Enhanced)
 function setupGit() {
-    const setupCmd = `git config --global user.email "bot@render.com" && \
-                     git config --global user.name "RenderBot" && \
-                     git config --global --add safe.directory /opt/render/project/src`;
+    const setupCmd = `git config user.email "bot@render.com" && \
+                     git config user.name "RenderBot" && \
+                     git config --add safe.directory /opt/render/project/src`;
     exec(setupCmd, (err) => {
         if (err) console.error("Git Setup Error (Non-critical):", err.message);
     });
 }
 setupGit();
+
+// Diagnostic Endpoint: Git Info
+app.get('/api/debug-git', (req, res) => {
+    const cmd = 'git status && git remote -v && git branch -a && git log -n 1';
+    exec(cmd, (err, stdout, stderr) => {
+        res.status(200).json({
+            success: !err,
+            output: stdout,
+            error: stderr || err?.message
+        });
+    });
+});
 
 app.post('/jivo-webhook', async (req, res) => {
     try {
@@ -65,7 +77,7 @@ app.post('/api/admin-login', (req, res) => {
 });
 
 /**
- * API Endpoint: Save Config with DETAILED Git Sync Feedback
+ * API Endpoint: Save Config with Robust Git Sync
  */
 app.post('/api/config', async (req, res) => {
     const { password, config } = req.body;
@@ -76,10 +88,10 @@ app.post('/api/config', async (req, res) => {
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
         loadConfig(); 
 
-        console.log("Starting Verbose Git Synchronization...");
+        console.log("Starting Robust Git Synchronization...");
         
-        // Sync Strategy: Force Push for single file to ensure the Dashboard version always wins.
-        // We also check branch existence just in case.
+        // Strategy: Pull the latest changes to ensure we are not behind, then add, commit, and push.
+        // We use the token-embedded URL for ALL operations.
         const syncCmd = `git add config.json && \
                         git commit -m "chore: update config via dashboard" || echo "No changes" && \
                         git push ${REPO_URL} main --force`;

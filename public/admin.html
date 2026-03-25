@@ -32,9 +32,17 @@
     <!-- Login Section -->
     <div id="login-screen" class="max-w-md mx-auto mt-20 p-8 glass rounded-2xl shadow-2xl">
         <h1 class="text-3xl font-bold mb-2 text-center text-blue-400">Admin Login</h1>
-        <div id="connection-status" class="text-center text-[10px] text-gray-500 mb-6 flex items-center justify-center gap-2">
-            <span id="status-dot" class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span> 
-            <span id="status-text">Checking server...</span>
+        <div id="connection-status" class="text-center text-[10px] text-gray-500">
+            <div class="flex items-center space-x-4 text-sm text-gray-400">
+                <button onclick="debugGit()" class="hover:text-white transition-colors flex items-center space-x-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                    <span>Debug Connection</span>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <div id="status-dot" class="w-2 h-2 rounded-full bg-gray-500"></div>
+                    <span id="status-text">Connecting...</span>
+                </div>
+            </div>
         </div>
         
         <form onsubmit="submitAdminLogin(event)">
@@ -537,6 +545,22 @@
             document.getElementById('menu-editor').classList.add('hidden');
             document.getElementById('no-menu-selected').classList.remove('hidden');
             renderSidebar();
+        }
+
+        async function debugGit() {
+            const btn = event?.currentTarget;
+            if (btn) btn.disabled = true;
+            try {
+                const res = await fetch('/api/debug-git');
+                const data = await res.json();
+                const output = data.output || "No output";
+                const error = data.error || "No error";
+                alert(`--- GIT DIAGNOSTICS ---\n\nSUCCESS: ${data.success}\n\nSTDOUT:\n${output}\n\nSTDERR:\n${error}`);
+            } catch (e) {
+                alert("Failed to reach debug endpoint: " + e.message);
+            } finally {
+                if (btn) btn.disabled = false;
+            }
         }
 
         async function checkStatus() {
