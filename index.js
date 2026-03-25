@@ -19,12 +19,10 @@ app.use((req, res, next) => {
 // Setup Git Identity for Render environment
 function setupGit() {
     console.log("Setting up Git identity...");
-    exec('git config --global user.email "bot@render.com" && git config --global user.name "RenderBot"', (err, stdout, stderr) => {
-        if (err) {
-            console.error("Git Setup Error:", err);
-        } else {
-            console.log("Git Identity setup successful.");
-        }
+    // Force identity for every instance
+    exec('git config user.email "bot@render.com" && git config user.name "RenderBot"', (err) => {
+        if (err) console.error("Git Identity Error:", err);
+        else console.log("Git Identity configured.");
     });
 }
 setupGit();
@@ -33,127 +31,102 @@ setupGit();
 app.post('/jivo-webhook', async (req, res) => {
     try {
         const payload = req.body;
-        console.log('Received webhook payload:', JSON.stringify(payload, null, 2));
-
         const eventName = payload.event_name;
-
         if (eventName === 'client_message') {
             const userMessage = payload.message?.text || '';
             const clientId = payload.client_id;
             const chatId = payload.chat_id;
-
             const replyData = await handleMessage(userMessage, clientId, chatId);
             return res.status(200).json(replyData);
         }
-
         return res.status(200).json({ ok: true });
-
     } catch (error) {
         console.error('Webhook error:', error);
         res.status(500).send({ error: 'Internal Server Error' });
     }
 });
 
-// Serve frontend static files
 app.use(express.static('public'));
 
-// Helper to get trimmed admin password
 const getAdminPassword = () => (process.env.ADMIN_PASSWORD || 'admin123').trim();
 
-// API Endpoint: Load Config
 app.get('/api/config', (req, res) => {
     try {
         const configPath = path.join(__dirname, 'config.json');
         const configData = fs.readFileSync(configPath, 'utf8');
         res.status(200).json(JSON.parse(configData));
     } catch (error) {
-        console.error('Error reading config:', error);
         res.status(500).json({ error: 'Failed to read configuration' });
     }
 });
 
-// API Endpoint: Admin Login
 app.post('/api/admin-login', (req, res) => {
     const { password } = req.body;
-    const ADMIN_PASSWORD = getAdminPassword();
-    
-    if (password === ADMIN_PASSWORD) {
-        res.status(200).json({ success: true });
-    } else {
-        res.status(401).json({ error: 'Invalid password' });
-    }
+    if (password === getAdminPassword()) res.status(200).json({ success: true });
+    else res.status(401).json({ error: 'Invalid password' });
 });
 
 /**
- * API Endpoint: Save Config
- * Implements Git Sync to make changes permanent on Render
+ * API Endpoint: Save Config with Synchronous Git Push
  */
-app.post('/api/config', (req, res) => {
+app.post('/api/config', async (req, res) => {
     const { password, config } = req.body;
-    const ADMIN_PASSWORD = getAdminPassword();
-    
-    if (password !== ADMIN_PASSWORD) {
-        return res.status(401).json({ error: 'Unauthorized. Invalid password.' });
+    if (password !== getAdminPassword()) {
+        return res.status(401).json({ error: 'Unauthorized' });
     }
 
     try {
         const configPath = path.join(__dirname, 'config.json');
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
-        
-        // Refresh the bot's configuration cache in memory immediately
-        loadConfig();
-        
-        // --- GIT SYNC START ---
-        // This ensures changes are permanent by pushing them back to GitHub repository.
-        console.log("Initiating Git Sync for config.json...");
-        
-        // Use a more robust git command that handles identity and triggers Render auto-deploy
-        const gitCmd = 'git add config.json && git commit -m "chore: update config via dashboard" && git push origin main';
-        
-        exec(gitCmd, (err, stdout, stderr) => {
-            if (err) {
-                console.error("Git Sync Error:", err);
-                console.error("Git Stderr:", stderr);
-            } else {
-                console.log("Git Sync Success:", stdout);
-            }
-        });
-        // --- GIT SYNC END ---
+        loadConfig(); // Update memory cache
 
-        res.status(200).json({ success: true, message: 'Configuration saved and synced correctly' });
+        console.log("Starting Git Synchronization...");
+        
+        // Complex sync: pull first to avoid non-fast-forward, then commit and push.
+        // We use --rebase to keep history clean and avoid merge commits in this automated flow.
+        const syncCmd = `git config user.email "bot@render.com" && \
+                        git config user.name "RenderBot" && \
+                        git add config.json && \
+                        git commit -m "chore: update config via dashboard" && \
+                        git pull --rebase origin main && \
+                        git push origin main`;
+
+        exec(syncCmd, (err, stdout, stderr) => {
+            if (err) {
+                console.error("Git Sync FAILED:", err);
+                console.error("Git Stderr:", stderr);
+                // Even if git fails, we saved locally. But we tell the user it didn't sync permanently.
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Saved locally, but permanent sync failed. Content will revert on next restart.',
+                    error: stderr || err.message
+                });
+            }
+            
+            console.log("Git Sync SUCCESS:", stdout);
+            res.status(200).json({ 
+                success: true, 
+                message: 'Configuration saved and permanently synced to GitHub!' 
+            });
+        });
+
     } catch (error) {
-        console.error('Error saving config:', error);
-        res.status(500).json({ error: 'Failed to save configuration' });
+        console.error('Save Error:', error);
+        res.status(500).json({ error: 'Failed to save configuration locally' });
     }
 });
 
-// Web chat testing endpoint
 app.post('/api/chat', async (req, res) => {
     try {
-        const userMessage = req.body.message || '';
-        const clientId = req.ip || 'web_user_' + Date.now();
-        const chatId = 'web_chat_' + clientId;
-        
-        const replyData = await handleMessage(userMessage, clientId, chatId);
+        const replyData = await handleMessage(req.body.message || '', req.ip, 'web_chat_' + req.ip);
         res.status(200).json(replyData);
     } catch (error) {
-        console.error('Web Chat error:', error);
         res.status(500).send({ error: 'Internal Server Error' });
     }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`JivoChat bot server running on port ${PORT}`);
-    const pass = getAdminPassword();
-    console.log(`Debug: ADMIN_PASSWORD loaded correctly. (Length: ${pass.length})`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
-require('./updateEnv'); // Auto-update .env with IP
-
-// Initialize Telegram testing bot
-try {
-    require('./telegramBot');
-} catch (e) {
-    console.warn("Telegram bot initialization failed:", e.message);
-}
+require('./updateEnv');
+try { require('./telegramBot'); } catch (e) {}

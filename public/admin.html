@@ -493,14 +493,27 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ password: adminPassword, config: currentConfig })
                 });
-                if (response.ok) {
-                    showToast("Changes saved & synced to GitHub!");
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showToast("Changes saved & permanently synced to GitHub!");
                     renderSidebar();
                 } else {
-                    const data = await response.json();
-                    alert("Error: " + data.error);
+                    // Detailed error if sync failed but local write might have worked
+                    const msg = data.message || data.error || "Unknown server error";
+                    const isSyncError = msg.toLowerCase().includes('sync');
+                    
+                    if (isSyncError) {
+                        alert("⚠️ Permanent Sync Failed!\n\n" + msg + "\n\nYour changes are active for now but will BE LOST if the server restarts. Please check your GitHub token or try again.");
+                        showToast("Local save only - Sync failed!", "bg-red-600");
+                    } else {
+                        alert("Error: " + msg);
+                    }
                 }
-            } catch (err) { alert("Network error."); }
+            } catch (err) { 
+                alert("Network error. Please check your internet connection."); 
+            }
             finally {
                 saveBtn.disabled = false;
                 document.getElementById('save-btn-spinner').classList.add('hidden');
@@ -508,11 +521,16 @@
             }
         }
 
-        function showToast(msg) {
+        function showToast(msg, bgColor = "bg-green-600") {
             const t = document.getElementById('toast');
-            document.getElementById('toast-message').textContent = msg;
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 3000);
+            const messageEl = document.getElementById('toast-message');
+            
+            messageEl.textContent = msg;
+            t.className = `toast show ${bgColor}`;
+            
+            setTimeout(() => {
+                t.classList.remove('show');
+            }, 4000);
         }
 
         function deleteActiveMenu() {
