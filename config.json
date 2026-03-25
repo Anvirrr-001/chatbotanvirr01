@@ -41,7 +41,7 @@
     },
     {
       "id": "payment_menu",
-      "text": "ডিপোজিট নিয়ে আপনার প্রশ্নটি উল্লেখ করুন।",
+      "text": "ডিপোজিট নিয়ে আপনার প্রশ্নটি উল্লেখ করুন। fgfdg check dasboard ",
       "type": "standard",
       "options": [
         {
@@ -54,7 +54,7 @@
         },
         {
           "text": "ডিপোজিট তথ্য",
-          "target": "deposit_info"
+          "target": ""
         },
         {
           "text": "উত্তোলন তথ্য",
