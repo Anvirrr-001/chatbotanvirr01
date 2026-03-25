@@ -10,6 +10,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// GitHub Config for Sync
+// IMPORTANT: Set GITHUB_TOKEN in your Render Dashboard environment variables
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || "";
+const GITHUB_OWNER = "Anvirrr-001";
+const GITHUB_REPO = "chatbotanvirr01";
+const REPO_URL = GITHUB_TOKEN ? `https://${GITHUB_TOKEN}@github.com/${GITHUB_OWNER}/${GITHUB_REPO}.git` : "";
+
 // Request logging middleware
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.url}`);
@@ -19,10 +26,8 @@ app.use((req, res, next) => {
 // Setup Git Identity for Render environment
 function setupGit() {
     console.log("Setting up Git identity...");
-    // Force identity for every instance
     exec('git config user.email "bot@render.com" && git config user.name "RenderBot"', (err) => {
         if (err) console.error("Git Identity Error:", err);
-        else console.log("Git Identity configured.");
     });
 }
 setupGit();
@@ -68,6 +73,7 @@ app.post('/api/admin-login', (req, res) => {
 
 /**
  * API Endpoint: Save Config with Synchronous Git Push
+ * Uses Explicit Token URL to ensure persistence on Render
  */
 app.post('/api/config', async (req, res) => {
     const { password, config } = req.body;
@@ -80,25 +86,28 @@ app.post('/api/config', async (req, res) => {
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
         loadConfig(); // Update memory cache
 
+        if (!REPO_URL) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'GITHUB_TOKEN is not configured on the server. Sync failed.' 
+            });
+        }
+
         console.log("Starting Git Synchronization...");
         
-        // Complex sync: pull first to avoid non-fast-forward, then commit and push.
-        // We use --rebase to keep history clean and avoid merge commits in this automated flow.
-        const syncCmd = `git config user.email "bot@render.com" && \
-                        git config user.name "RenderBot" && \
-                        git add config.json && \
-                        git commit -m "chore: update config via dashboard" && \
-                        git pull --rebase origin main && \
-                        git push origin main`;
+        // Complex sync: pull (rebase) -> add -> commit -> push
+        const syncCmd = `git add config.json && \
+                        git commit -m "chore: update config via dashboard" || echo "No changes to commit" && \
+                        git pull --rebase ${REPO_URL} main && \
+                        git push ${REPO_URL} main`;
 
         exec(syncCmd, (err, stdout, stderr) => {
-            if (err) {
+            if (err && !stderr.includes("Everything up-to-date") && !stderr.includes("nothing to commit")) {
                 console.error("Git Sync FAILED:", err);
                 console.error("Git Stderr:", stderr);
-                // Even if git fails, we saved locally. But we tell the user it didn't sync permanently.
                 return res.status(500).json({ 
                     success: false, 
-                    message: 'Saved locally, but permanent sync failed. Content will revert on next restart.',
+                    message: 'Sync failed. Content will revert on restart.',
                     error: stderr || err.message
                 });
             }
@@ -106,13 +115,13 @@ app.post('/api/config', async (req, res) => {
             console.log("Git Sync SUCCESS:", stdout);
             res.status(200).json({ 
                 success: true, 
-                message: 'Configuration saved and permanently synced to GitHub!' 
+                message: 'Saved & permanently synced to GitHub!' 
             });
         });
 
     } catch (error) {
         console.error('Save Error:', error);
-        res.status(500).json({ error: 'Failed to save configuration locally' });
+        res.status(500).json({ error: 'Failed to save configuration' });
     }
 });
 
