@@ -22,13 +22,12 @@ app.use((req, res, next) => {
     next();
 });
 
-// Setup Git Identity & Safety (Enhanced)
+// Setup Git Identity & Safety
 function setupGit() {
-    // We do this every time to ensure context is safe
+    // We set these every time to ensure context is safe, even in detached HEAD
     const setupCmd = `git config user.email "bot@render.com" && \
                      git config user.name "RenderBot" && \
-                     git config --add safe.directory /opt/render/project/src && \
-                     git remote set-url origin ${REPO_URL}`;
+                     git config --add safe.directory /opt/render/project/src`;
     exec(setupCmd, (err) => {
         if (err) console.error("Git Setup Info:", err.message);
     });
@@ -92,20 +91,18 @@ app.post('/api/config', async (req, res) => {
 
         console.log("Starting Robust Git Synchronization...");
         
-        // Strategy: 
-        // 1. Fetch unshallow if necessary (Render usually does shallow clones)
-        // 2. Add and commit
-        // 3. Force push to main
-        const syncCmd = `git fetch --unshallow || git fetch --all && \
-                        git add config.json && \
+        // Final Bulletproof Strategy:
+        // 1. Render is usually in detached HEAD, so we push HEAD:main.
+        // 2. We skip using 'origin' and use the full REPO_URL directly to avoid 'missing remote' errors.
+        // 3. We use --force to override any upstream conflicts since the Dashboard is the source of truth.
+        const syncCmd = `git add config.json && \
                         (git commit -m "chore: update config via dashboard" || echo "No changes") && \
-                        git push origin main --force`;
+                        git push ${REPO_URL} HEAD:main --force`;
 
         exec(syncCmd, (err, stdout, stderr) => {
             const logs = `STDOUT: ${stdout}\nSTDERR: ${stderr}`;
             console.log("Git Sync Process Logs:\n", logs);
 
-            // We consider it success if the push worked OR if there were truly no changes
             const isNoChanges = stdout.includes("No changes") || stderr.includes("up-to-date");
             const isPushSuccess = !err || isNoChanges;
 

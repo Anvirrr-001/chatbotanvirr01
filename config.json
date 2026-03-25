@@ -24,7 +24,7 @@
       "type": "standard",
       "options": [
         { "text": "ডিপোজিট জমা হয় নি", "target": "deposit_methods_followup" },
-        { "text": "দীর্ঘ উত্তোলন", "target": "payment_followup" },
+        { "text": "দীর্ঘ উত্তোলন", "target": "withdraw_info_menu" },
         { "text": "ডিপোজিট তথ্য", "target": "deposit_info" },
         { "text": "উত্তোলন তথ্য", "target": "withdraw_info_menu" },
         { "text": "← মেনুতে ফিরে যান", "target": "main_menu" }
