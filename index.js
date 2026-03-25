@@ -16,6 +16,19 @@ app.use((req, res, next) => {
     next();
 });
 
+// Setup Git Identity for Render environment
+function setupGit() {
+    console.log("Setting up Git identity...");
+    exec('git config --global user.email "bot@render.com" && git config --global user.name "RenderBot"', (err, stdout, stderr) => {
+        if (err) {
+            console.error("Git Setup Error:", err);
+        } else {
+            console.log("Git Identity setup successful.");
+        }
+    });
+}
+setupGit();
+
 // Main Webhook Endpoint for JivoChat
 app.post('/jivo-webhook', async (req, res) => {
     try {
@@ -87,20 +100,20 @@ app.post('/api/config', (req, res) => {
         const configPath = path.join(__dirname, 'config.json');
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
         
-        // Refresh the bot's configuration cache
+        // Refresh the bot's configuration cache in memory immediately
         loadConfig();
         
         // --- GIT SYNC START ---
         // This ensures changes are permanent by pushing them back to GitHub repository.
         console.log("Initiating Git Sync for config.json...");
+        
+        // Use a more robust git command that handles identity and triggers Render auto-deploy
         const gitCmd = 'git add config.json && git commit -m "chore: update config via dashboard" && git push origin main';
         
         exec(gitCmd, (err, stdout, stderr) => {
             if (err) {
                 console.error("Git Sync Error:", err);
                 console.error("Git Stderr:", stderr);
-                // We DON'T fail the request here, because the local write succeeded.
-                // But logging it is critical.
             } else {
                 console.log("Git Sync Success:", stdout);
             }
@@ -138,7 +151,7 @@ app.listen(PORT, () => {
 
 require('./updateEnv'); // Auto-update .env with IP
 
-// Initialize Telegram testing bot (RE-ENABLED for better accessibility)
+// Initialize Telegram testing bot
 try {
     require('./telegramBot');
 } catch (e) {
