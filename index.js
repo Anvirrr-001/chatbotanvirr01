@@ -24,11 +24,13 @@ app.use((req, res, next) => {
 
 // Setup Git Identity & Safety (Enhanced)
 function setupGit() {
+    // We do this every time to ensure context is safe
     const setupCmd = `git config user.email "bot@render.com" && \
                      git config user.name "RenderBot" && \
-                     git config --add safe.directory /opt/render/project/src`;
+                     git config --add safe.directory /opt/render/project/src && \
+                     git remote set-url origin ${REPO_URL}`;
     exec(setupCmd, (err) => {
-        if (err) console.error("Git Setup Error (Non-critical):", err.message);
+        if (err) console.error("Git Setup Info:", err.message);
     });
 }
 setupGit();
@@ -90,21 +92,28 @@ app.post('/api/config', async (req, res) => {
 
         console.log("Starting Robust Git Synchronization...");
         
-        // Strategy: Pull the latest changes to ensure we are not behind, then add, commit, and push.
-        // We use the token-embedded URL for ALL operations.
-        const syncCmd = `git add config.json && \
-                        git commit -m "chore: update config via dashboard" || echo "No changes" && \
-                        git push ${REPO_URL} main --force`;
+        // Strategy: 
+        // 1. Fetch unshallow if necessary (Render usually does shallow clones)
+        // 2. Add and commit
+        // 3. Force push to main
+        const syncCmd = `git fetch --unshallow || git fetch --all && \
+                        git add config.json && \
+                        (git commit -m "chore: update config via dashboard" || echo "No changes") && \
+                        git push origin main --force`;
 
         exec(syncCmd, (err, stdout, stderr) => {
             const logs = `STDOUT: ${stdout}\nSTDERR: ${stderr}`;
             console.log("Git Sync Process Logs:\n", logs);
 
-            if (err && !stderr.includes("Everything up-to-date") && !stderr.includes("nothing to commit") && !stdout.includes("No changes")) {
+            // We consider it success if the push worked OR if there were truly no changes
+            const isNoChanges = stdout.includes("No changes") || stderr.includes("up-to-date");
+            const isPushSuccess = !err || isNoChanges;
+
+            if (!isPushSuccess) {
                 return res.status(500).json({ 
                     success: false, 
                     message: 'Permanent Sync Failed!',
-                    error: err.message,
+                    error: err?.message || stderr,
                     logs: logs
                 });
             }
