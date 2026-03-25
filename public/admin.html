@@ -497,19 +497,16 @@
                 const data = await response.json();
                 
                 if (response.ok && data.success) {
-                    showToast("Changes saved & permanently synced to GitHub!");
+                    showToast("Saved & permanently synced to GitHub!");
+                    console.log("Sync Logs:", data.logs);
                     renderSidebar();
                 } else {
-                    // Detailed error if sync failed but local write might have worked
                     const msg = data.message || data.error || "Unknown server error";
-                    const isSyncError = msg.toLowerCase().includes('sync');
+                    const logs = data.logs ? `\n\n--- DEBUG LOGS ---\n${data.logs}` : "";
                     
-                    if (isSyncError) {
-                        alert("⚠️ Permanent Sync Failed!\n\n" + msg + "\n\nYour changes are active for now but will BE LOST if the server restarts. Please check your GitHub token or try again.");
-                        showToast("Local save only - Sync failed!", "bg-red-600");
-                    } else {
-                        alert("Error: " + msg);
-                    }
+                    alert("⚠️ Permanent Sync Status:\n" + msg + logs);
+                    showToast("Sync check failed!", "bg-red-600");
+                    console.error("Sync Error Logs:", data.logs);
                 }
             } catch (err) { 
                 alert("Network error. Please check your internet connection."); 
