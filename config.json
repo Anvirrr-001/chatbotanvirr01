@@ -1,5 +1,5 @@
 {
-  "botName": "ELON সাহায্যকারী",
+  "botName": "ANVIR সাহায্যকারী",
   "botAvatar": "https://i.ibb.co/example",
   "welcomeGreeting": "হ্যালো, কাস্টমার সাপোর্ট এ যোগাযোগ করার জন্য ধন্যবাদ 👋",
   "initialMenuId": "main_menu",
@@ -260,7 +260,7 @@
     },
     {
       "id": "referral_menu",
-      "text": "রেফারেল প্রোগ্রাম তথ্য...czxc vbnmbvbcxzvb zxc নিশ্চিত ",
+      "text": "রেফারেল প্রোগ্রাম তথ্য... rdmkafncknkckjv what is the referral ?",
       "type": "standard",
       "options": []
     },
